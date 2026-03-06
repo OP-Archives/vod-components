@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PropTypes from 'prop-types';
-import ExpandMore from '../utils/ExpandMore';
+import ExpandMore from '../../utils/ExpandMore';
 
 ChatHeader.propTypes = {
   isPortrait: PropTypes.bool,
