@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography';
 import humanize from 'humanize-duration';
 import { toSeconds, getImage } from '../utils/helpers';
 
-export default memo(function Chapters({ chapters, chapter, setPart, youtube, setChapter, setTimestamp, isYoutubeVod }) {
+export default memo(function VodChapters({ chapters, chapter, setPart, youtube, setChapter, setTimestamp, isYoutubeVod }) {
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleClose = () => {

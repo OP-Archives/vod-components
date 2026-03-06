@@ -6,7 +6,7 @@ const NotFound = styled((props) => {
   const { channel, logo } = props;
   document.title = `Not Found - ${channel}`;
   const siteLogo = import.meta.env.VITE_NOT_FOUND_LOGO || logo || null;
-  
+
   return (
     <div {...props}>
       {siteLogo && <img src={siteLogo} alt="" style={{ height: 'auto', maxWidth: '200px' }} />}

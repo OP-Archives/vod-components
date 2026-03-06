@@ -11,7 +11,6 @@ import MenuItem from '@mui/material/MenuItem';
 import Loading from '../utils/Loading';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VodChapters from './VodChapters';
-const Chapters = VodChapters;
 import ExpandMore from '../utils/ExpandMore';
 import CustomWidthTooltip from '../utils/CustomToolTip';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -53,8 +52,28 @@ export default function BaseVod(props) {
   if (vod === undefined) return <Loading />;
 
   return (
-    <Box sx={{ display: 'flex', height: '100%', width: '100%', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0, overflow: 'hidden', position: 'relative', minHeight: 0 }}>
-      <Box sx={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', flex: isPortrait ? '1 1 auto' : '1 1 auto', minHeight: 0 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        height: '100%',
+        width: '100%',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        minWidth: 0,
+        overflow: 'hidden',
+        position: 'relative',
+        minHeight: 0,
+      }}
+    >
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          aspectRatio: '16 / 9',
+          flex: isPortrait ? '1 1 auto' : '1 1 auto',
+          minHeight: 0,
+        }}
+      >
         {isYoutubeVod ? (
           <YoutubePlayer playerRef={playerRef} part={part} youtube={youtube} setCurrentTime={setCurrentTime} setPart={setPart} setPlayerState={setPlayerState} />
         ) : games ? (
@@ -72,7 +91,7 @@ export default function BaseVod(props) {
       </Box>
       <Collapse in={showMenu} timeout="auto" unmountOnExit sx={{ minHeight: 'auto !important', width: '100%' }}>
         <Box sx={{ display: 'flex', p: 1, alignItems: 'center' }}>
-          {chapter && <Chapters chapters={vod.chapters} chapter={chapter} setChapter={setChapter} setTimestamp={setTimestamp} setPart={setPart} youtube={youtube} isYoutubeVod={isYoutubeVod} />}
+          {chapter && <VodChapters chapters={vod.chapters} chapter={chapter} setChapter={setChapter} setTimestamp={setTimestamp} setPart={setPart} youtube={youtube} isYoutubeVod={isYoutubeVod} />}
           <CustomWidthTooltip title={vod.title}>
             <Typography fontWeight={550} variant="body1" noWrap={true}>{`${vod.title}`}</Typography>
           </CustomWidthTooltip>
@@ -94,7 +113,13 @@ export default function BaseVod(props) {
               </Box>
             )}
             {games && (
-              <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  marginLeft: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
                 <Box sx={{ ml: 0.5 }}>
                   <FormControl variant="outlined">
                     <InputLabel id="select-label">Game</InputLabel>

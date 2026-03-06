@@ -21,6 +21,7 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "lint": "eslint src --ext js,jsx",
+    "lint:fix": "eslint src/ --fix",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -41,6 +42,7 @@
     "@babel/preset-env": "^7.29.0",
     "@babel/preset-react": "^7.28.5",
     "eslint": "^9.17.0",
+    "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "vite": "^6.4.1",

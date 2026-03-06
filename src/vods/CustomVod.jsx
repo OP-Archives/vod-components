@@ -6,13 +6,13 @@ import Loading from '../utils/Loading';
 import { useLocation, useParams } from 'react-router-dom';
 import Chat from './Chat';
 import { convertTimestamp } from '../utils/helpers';
-import archiveClient from './client';
 import BaseVod from './BaseVod';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
 
 const channel = import.meta.env.VITE_CHANNEL;
 
 export default function CustomVod(props) {
+  const { fetchApi } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -27,19 +27,18 @@ export default function CustomVod(props) {
   useEffect(() => {
     document.title = `${vodId} - ${channel}`;
     const fetchVod = async () => {
-      await archiveClient
-        .service('vods')
-        .get(vodId)
-        .then((response) => {
+      if (fetchApi && vodId) {
+        try {
+          const response = await fetchApi('vods', vodId);
           setVod(response);
-        })
-        .catch((e) => {
+        } catch (e) {
           console.error(e);
-        });
+        }
+      }
     };
     fetchVod();
     return;
-  }, [vodId]);
+  }, [vodId, fetchApi]);
 
   useEffect(() => {
     console.info(`Chat Delay: ${userChatDelay + delay} seconds`);

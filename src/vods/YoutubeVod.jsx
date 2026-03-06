@@ -8,13 +8,12 @@ import NotFound from '../utils/NotFound';
 import Chat from './Chat';
 import { toSeconds, convertTimestamp } from '../utils/helpers';
 import BaseVod from './BaseVod';
-import archiveClient from './client';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
 
 const channel = import.meta.env.VITE_CHANNEL;
 
 export default function YoutubeVod(props) {
-  const { type } = props;
+  const { type, fetchApi } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -29,10 +28,9 @@ export default function YoutubeVod(props) {
   useEffect(() => {
     document.title = `${vodId} - ${channel}`;
     const fetchVod = async () => {
-      await archiveClient
-        .service('vods')
-        .get(vodId)
-        .then((response) => {
+      if (fetchApi && vodId) {
+        try {
+          const response = await fetchApi('vods', vodId);
           setVod(response);
           if (!type) {
             const useType = response.youtube.some((youtube) => youtube.type === 'live') ? 'live' : 'vod';
@@ -40,14 +38,14 @@ export default function YoutubeVod(props) {
           } else {
             setYoutube(response.youtube.filter((data) => data.type === type));
           }
-        })
-        .catch((e) => {
+        } catch (e) {
           console.error(e);
-        });
+        }
+      }
     };
     fetchVod();
     return;
-  }, [vodId, type]);
+  }, [vodId, type, fetchApi]);
 
   useEffect(() => {
     if (!youtube || !vodId) return;

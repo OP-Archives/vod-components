@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import babelParser from '@babel/eslint-parser';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import prettier from 'eslint-plugin-prettier';
 
 export default [
   js.configs.recommended,
@@ -40,12 +41,13 @@ export default [
     },
     settings: {
       react: {
-        version: '19.2',
+        version: 'detect',
       },
     },
     plugins: {
       react,
       'react-hooks': reactHooks,
+      prettier,
     },
     rules: {
       ...react.configs.recommended.rules,
@@ -58,6 +60,8 @@ export default [
       'react-hooks/set-state-in-effect': 'off',
       'no-case-declarations': 'off',
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
+      'prettier/prettier': 'error',
     },
   },
 ];
