@@ -7,30 +7,6 @@ import Paper from '@mui/material/Paper';
 import VideoJS from './VideoJS';
 import 'videojs-hotkeys';
 import { toSeconds, sleep } from '../utils/helpers';
-import PropTypes from 'prop-types';
-
-Player.propTypes = {
-  playerRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
-  setCurrentTime: PropTypes.func.isRequired,
-  type: PropTypes.string,
-  vod: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    title: PropTypes.string.isRequired,
-    thumbnail_url: PropTypes.string.isRequired,
-    duration: PropTypes.string.isRequired,
-    chapters: PropTypes.arrayOf(
-      PropTypes.shape({
-        start: PropTypes.number.isRequired,
-        end: PropTypes.number.isRequired,
-        name: PropTypes.string.isRequired,
-        image: PropTypes.string.isRequired,
-      })
-    ),
-  }).isRequired,
-  timestamp: PropTypes.number,
-  setDelay: PropTypes.func,
-  setPlayerState: PropTypes.func.isRequired,
-};
 
 export default function Player(props) {
   const { playerRef, setCurrentTime, type, vod, timestamp, setDelay, setPlayerState } = props;

@@ -12,38 +12,6 @@ import ChatMessages from './Chat/ChatMessages';
 import ChatSettingsModal from './Chat/ChatSettingsModal';
 import ExpandMore from '../utils/ExpandMore';
 import MessageTooltip from './Chat/MessageTooltip';
-import PropTypes from 'prop-types';
-
-Chat.propTypes = {
-  isPortrait: PropTypes.bool,
-  vodId: PropTypes.string.isRequired,
-  playerRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
-  userChatDelay: PropTypes.number,
-  delay: PropTypes.number,
-  youtube: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      part: PropTypes.number,
-      duration: PropTypes.number.isRequired,
-    })
-  ),
-  part: PropTypes.shape({
-    part: PropTypes.number.isRequired,
-    timestamp: PropTypes.number.isRequired,
-  }),
-  games: PropTypes.arrayOf(
-    PropTypes.shape({
-      video_id: PropTypes.string.isRequired,
-      game_name: PropTypes.string,
-      start_time: PropTypes.string.isRequired,
-    })
-  ),
-  isYoutubeVod: PropTypes.bool,
-  playerState: PropTypes.number,
-  setUserChatDelay: PropTypes.func,
-  twitchId: PropTypes.string,
-  archiveApiBase: PropTypes.string.isRequired,
-};
 
 const AbortController =
   window.AbortController ||

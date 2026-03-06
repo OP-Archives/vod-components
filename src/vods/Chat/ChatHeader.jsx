@@ -4,15 +4,7 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SettingsIcon from '@mui/icons-material/Settings';
-import PropTypes from 'prop-types';
 import ExpandMore from '../../utils/ExpandMore';
-
-ChatHeader.propTypes = {
-  isPortrait: PropTypes.bool,
-  showChat: PropTypes.bool.isRequired,
-  setShowChat: PropTypes.func.isRequired,
-  setShowModal: PropTypes.func.isRequired,
-};
 
 export default function ChatHeader(props) {
   const { isPortrait, showChat, setShowChat, setShowModal } = props;

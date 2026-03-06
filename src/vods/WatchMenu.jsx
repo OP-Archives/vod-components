@@ -6,15 +6,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Menu from '@mui/material/Menu';
-import PropTypes from 'prop-types';
-
-WatchMenu.propTypes = {
-  vod: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    youtube: PropTypes.arrayOf(PropTypes.object).isRequired,
-    games: PropTypes.arrayOf(PropTypes.object).isRequired,
-  }).isRequired,
-};
 
 export default function WatchMenu(props) {
   const { vod } = props;

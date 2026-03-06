@@ -1,10 +1,5 @@
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import PropTypes from 'prop-types';
-
-Loading.propTypes = {
-  logo: PropTypes.string,
-};
 
 export default function Loading({ logo }) {
   const loadingLogo = logo || null;

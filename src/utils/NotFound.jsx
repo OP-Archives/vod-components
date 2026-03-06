@@ -1,14 +1,9 @@
 import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import PropTypes from 'prop-types';
 import CustomLink from './CustomLink';
 
 const NotFound = styled((props) => {
   const { channel, logo } = props;
-  NotFound.propTypes = {
-    channel: PropTypes.string.isRequired,
-    logo: PropTypes.string,
-  };
   document.title = `Not Found - ${channel}`;
   const siteLogo = logo || null;
 

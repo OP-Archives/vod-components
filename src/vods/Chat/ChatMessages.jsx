@@ -2,16 +2,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import SimpleBar from 'simplebar-react';
-import PropTypes from 'prop-types';
-
-ChatMessages.propTypes = {
-  comments: PropTypes.arrayOf(PropTypes.object),
-  shownMessages: PropTypes.arrayOf(PropTypes.node).isRequired,
-  scrolling: PropTypes.bool.isRequired,
-  scrollToBottom: PropTypes.func.isRequired,
-  chatRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
-  handleScroll: PropTypes.func.isRequired,
-};
 
 export default function ChatMessages(props) {
   const { comments, shownMessages, scrolling, scrollToBottom, chatRef, handleScroll } = props;
