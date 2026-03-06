@@ -4,13 +4,21 @@ Shared VOD player components for OP-Archives streamer sites.
 
 ## Publishing
 
-To publish to GitHub Packages, you need to:
+**Important:** To publish a scoped package (`@op-archives/vod-components`), you must:
 
-1. Create a Personal Access Token (PAT) with `read:packages` and `publish:packages` scopes
-2. Add the token as a repository secret named `NPM_TOKEN`
-3. Update `.github/workflows/publish.yml` to use `${{ secrets.NPM_TOKEN }}` instead of `GITHUB_TOKEN`
+1. **Accept the package scope**: The org owner needs to invite you to publish under `@op-archives`
+   - Go to https://github.com/orgs/OP-Archives/packages?package_type=npm&visibility=public
+   - Or check your email for an invitation from GitHub
 
-The default `GITHUB_TOKEN` doesn't have permission to publish scoped packages to GitHub Packages.
+2. **Create a Personal Access Token (PAT)** with `read:packages` and `publish:packages` scopes
+
+3. **Add the token as a repository secret**:
+   - Go to Settings → Secrets and variables → Actions
+   - Add new secret named `NPM_TOKEN` with your PAT value
+
+4. **Configure the workflow** (already done in `.github/workflows/publish.yml`)
+
+The default `GITHUB_TOKEN` cannot publish scoped packages unless you've been explicitly invited to the scope.
 
 ## Usage
 
