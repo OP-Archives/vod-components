@@ -23,8 +23,6 @@ export { default as VideoJS } from './vods/VideoJS';
 export { default as BaseVod } from './vods/BaseVod';
 export { default as YoutubeVod } from './vods/YoutubeVod';
 export { default as CustomVod } from './vods/CustomVod';
-export { default as Vod } from './vods/Vod';
-export { default as Vods } from './vods/Vods';
 export { default as Chat } from './vods/Chat';
 
 // Chat Components

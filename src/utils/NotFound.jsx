@@ -1,15 +1,18 @@
 import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import CustomLink from './CustomLink';
-import Logo from '../assets/logo.jpg';
+
+const NOT_FOUND_LOGO = process.env.NOT_FOUND_LOGO || null;
 
 const NotFound = styled((props) => {
-  const { channel } = props;
+  const { channel, logo } = props;
   document.title = `Not Found - ${channel}`;
+  const siteLogo = logo || NOT_FOUND_LOGO;
+  
   return (
     <div {...props}>
-      <img src={Logo} alt="" style={{ height: 'auto', maxWidth: '200px' }} />
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+      {siteLogo && <img src={siteLogo} alt="" style={{ height: 'auto', maxWidth: '200px' }} />}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: siteLogo ? '1rem' : '0' }}>
         <CustomLink href="/">
           <Typography variant="body2" color="textSecondary">
             Nothing over here..
