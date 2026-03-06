@@ -7,8 +7,9 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import humanize from 'humanize-duration';
 import { toSeconds, getImage } from '../utils/helpers';
+import PropTypes from 'prop-types';
 
-export default memo(function VodChapters({ chapters, chapter, setPart, youtube, setChapter, setTimestamp, isYoutubeVod }) {
+const VodChapters = memo(function VodChapters({ chapters, chapter, setPart, youtube, setChapter, setTimestamp, isYoutubeVod }) {
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleClose = () => {
@@ -67,3 +68,34 @@ export default memo(function VodChapters({ chapters, chapter, setPart, youtube, 
     </Box>
   );
 });
+
+VodChapters.propTypes = {
+  chapters: PropTypes.arrayOf(
+    PropTypes.shape({
+      start: PropTypes.number.isRequired,
+      end: PropTypes.number,
+      name: PropTypes.string.isRequired,
+      image: PropTypes.string.isRequired,
+      duration: PropTypes.number,
+      gameId: PropTypes.string,
+    })
+  ).isRequired,
+  chapter: PropTypes.shape({
+    start: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired,
+    image: PropTypes.string.isRequired,
+  }).isRequired,
+  setPart: PropTypes.func,
+  youtube: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      part: PropTypes.number,
+      duration: PropTypes.number.isRequired,
+    })
+  ),
+  setChapter: PropTypes.func.isRequired,
+  setTimestamp: PropTypes.func,
+  isYoutubeVod: PropTypes.bool,
+};
+
+export default VodChapters;

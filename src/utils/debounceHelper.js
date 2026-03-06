@@ -15,7 +15,8 @@ export const useDebouncedCallback = (callback, delay) => {
   );
 
   useEffect(() => {
-    return () => debouncedFn.current.cancel();
+    const currentDebouncedFn = debouncedFn.current;
+    return () => currentDebouncedFn.cancel();
   }, []);
 
   return debouncedFn.current;
@@ -37,7 +38,8 @@ export const useDebouncedSetter = (setter, delay) => {
   );
 
   useEffect(() => {
-    return () => debouncedFn.current.cancel();
+    const currentDebouncedFn = debouncedFn.current;
+    return () => currentDebouncedFn.cancel();
   }, []);
 
   return debouncedFn.current;

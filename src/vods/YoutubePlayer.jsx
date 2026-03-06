@@ -1,9 +1,36 @@
 import { useEffect, useRef } from 'react';
 import canAutoPlay from 'can-autoplay';
 import Youtube from 'react-youtube';
+import PropTypes from 'prop-types';
+
+YoutubePlayer.propTypes = {
+  youtube: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      part: PropTypes.number,
+      duration: PropTypes.number.isRequired,
+    })
+  ),
+  playerRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
+  part: PropTypes.shape({
+    part: PropTypes.number.isRequired,
+    timestamp: PropTypes.number.isRequired,
+  }).isRequired,
+  setPart: PropTypes.func.isRequired,
+  setCurrentTime: PropTypes.func.isRequired,
+  setPlayerState: PropTypes.func.isRequired,
+  games: PropTypes.arrayOf(
+    PropTypes.shape({
+      video_id: PropTypes.string.isRequired,
+      game_name: PropTypes.string,
+      start_time: PropTypes.string,
+    })
+  ),
+  origin: PropTypes.string,
+};
 
 export default function YoutubePlayer(props) {
-  const { youtube, playerRef, part, setPart, setCurrentTime, setPlayerState, games } = props;
+  const { youtube, playerRef, part, setPart, setCurrentTime, setPlayerState, games, origin } = props;
   const timeUpdateRef = useRef(null);
 
   useEffect(() => {
@@ -103,7 +130,7 @@ export default function YoutubePlayer(props) {
           playsinline: 1,
           rel: 0,
           modestbranding: 1,
-          origin: import.meta.env.VITE_DOMAIN,
+          origin: origin || '',
         },
       }}
       onReady={onReady}

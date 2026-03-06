@@ -11,6 +11,18 @@ import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import Slider from '@mui/material/Slider';
 import { useDebouncedCallback } from '../../utils/debounceHelper';
+import PropTypes from 'prop-types';
+
+ChatSettingsModal.propTypes = {
+  userChatDelay: PropTypes.number,
+  setUserChatDelay: PropTypes.func.isRequired,
+  showModal: PropTypes.bool.isRequired,
+  setShowModal: PropTypes.func.isRequired,
+  showTimestamp: PropTypes.bool,
+  setShowTimestamp: PropTypes.func.isRequired,
+  chatWidth: PropTypes.number,
+  setChatWidth: PropTypes.func.isRequired,
+};
 
 export default function ChatSettingsModal(props) {
   const { userChatDelay, setUserChatDelay, showModal, setShowModal, showTimestamp, setShowTimestamp, chatWidth, setChatWidth } = props;

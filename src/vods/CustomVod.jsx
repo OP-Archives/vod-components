@@ -8,11 +8,15 @@ import Chat from './Chat';
 import { convertTimestamp } from '../utils/helpers';
 import BaseVod from './BaseVod';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
+import PropTypes from 'prop-types';
 
-const channel = import.meta.env.VITE_CHANNEL;
+CustomVod.propTypes = {
+  archiveApiBase: PropTypes.string.isRequired,
+  channel: PropTypes.string.isRequired,
+};
 
 export default function CustomVod(props) {
-  const { fetchApi } = props;
+  const { archiveApiBase, channel } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -27,18 +31,27 @@ export default function CustomVod(props) {
   useEffect(() => {
     document.title = `${vodId} - ${channel}`;
     const fetchVod = async () => {
-      if (fetchApi && vodId) {
-        try {
-          const response = await fetchApi('vods', vodId);
-          setVod(response);
-        } catch (e) {
-          console.error(e);
-        }
+      try {
+        await fetch(`${archiveApiBase}/vods/${vodId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+          .then((response) => response.json())
+          .then((response) => {
+            setVod(response);
+          })
+          .catch((e) => {
+            console.error(e);
+          });
+      } catch (e) {
+        console.error(e);
       }
     };
     fetchVod();
     return;
-  }, [vodId, fetchApi]);
+  }, [vodId, archiveApiBase, channel]);
 
   useEffect(() => {
     console.info(`Chat Delay: ${userChatDelay + delay} seconds`);

@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
+import PropTypes from 'prop-types';
+
+VideoJS.propTypes = {
+  options: PropTypes.object.isRequired,
+  onReady: PropTypes.func,
+};
 
 export const VideoJS = (props) => {
   const videoRef = useRef(null);

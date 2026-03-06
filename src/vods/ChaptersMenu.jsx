@@ -8,6 +8,30 @@ import Tooltip from '@mui/material/Tooltip';
 import CustomLink from '../utils/CustomLink';
 import humanize from 'humanize-duration';
 import { toHMS, toSeconds, getImage } from '../utils/helpers';
+import PropTypes from 'prop-types';
+
+Chapters.propTypes = {
+  vod: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    youtube: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        part: PropTypes.number,
+        duration: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    chapters: PropTypes.arrayOf(
+      PropTypes.shape({
+        start: PropTypes.number,
+        end: PropTypes.number,
+        name: PropTypes.string.isRequired,
+        image: PropTypes.string.isRequired,
+        gameId: PropTypes.string,
+        duration: PropTypes.number,
+      })
+    ).isRequired,
+  }).isRequired,
+};
 
 export default function Chapters(props) {
   const { vod } = props;

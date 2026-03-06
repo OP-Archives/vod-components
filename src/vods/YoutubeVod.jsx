@@ -9,11 +9,17 @@ import Chat from './Chat';
 import { toSeconds, convertTimestamp } from '../utils/helpers';
 import BaseVod from './BaseVod';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
+import PropTypes from 'prop-types';
 
-const channel = import.meta.env.VITE_CHANNEL;
+YoutubeVod.propTypes = {
+  type: PropTypes.string,
+  archiveApiBase: PropTypes.string.isRequired,
+  channel: PropTypes.string.isRequired,
+  defaultDelay: PropTypes.number,
+};
 
 export default function YoutubeVod(props) {
-  const { type, fetchApi } = props;
+  const { type, archiveApiBase, channel, defaultDelay } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -28,9 +34,14 @@ export default function YoutubeVod(props) {
   useEffect(() => {
     document.title = `${vodId} - ${channel}`;
     const fetchVod = async () => {
-      if (fetchApi && vodId) {
-        try {
-          const response = await fetchApi('vods', vodId);
+      await fetch(`${archiveApiBase}/vods/${vodId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+        .then((response) => response.json())
+        .then((response) => {
           setVod(response);
           if (!type) {
             const useType = response.youtube.some((youtube) => youtube.type === 'live') ? 'live' : 'vod';
@@ -38,14 +49,14 @@ export default function YoutubeVod(props) {
           } else {
             setYoutube(response.youtube.filter((data) => data.type === type));
           }
-        } catch (e) {
+        })
+        .catch((e) => {
           console.error(e);
-        }
-      }
+        });
     };
     fetchVod();
     return;
-  }, [vodId, type, fetchApi]);
+  }, [vodId, type, archiveApiBase, channel]);
 
   useEffect(() => {
     if (!youtube || !vodId) return;
@@ -80,7 +91,7 @@ export default function YoutubeVod(props) {
     let totalYoutubeDuration = 0;
     for (const data of youtube) {
       if (!data.duration) {
-        totalYoutubeDuration += parseFloat(import.meta.env.VITE_DEFAULT_DELAY) ?? 0;
+        totalYoutubeDuration += defaultDelay || 0;
         continue;
       }
       totalYoutubeDuration += data.duration;
@@ -88,7 +99,7 @@ export default function YoutubeVod(props) {
     const tmpDelay = Math.max(0, vodDuration - totalYoutubeDuration);
     setDelay(tmpDelay);
     return;
-  }, [youtube, vod]);
+  }, [youtube, vod, defaultDelay]);
 
   // Handle Resume Positions depending on player state.
   useEffect(() => {

@@ -12,6 +12,38 @@ import ChatMessages from './Chat/ChatMessages';
 import ChatSettingsModal from './Chat/ChatSettingsModal';
 import ExpandMore from '../utils/ExpandMore';
 import MessageTooltip from './Chat/MessageTooltip';
+import PropTypes from 'prop-types';
+
+Chat.propTypes = {
+  isPortrait: PropTypes.bool,
+  vodId: PropTypes.string.isRequired,
+  playerRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
+  userChatDelay: PropTypes.number,
+  delay: PropTypes.number,
+  youtube: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      part: PropTypes.number,
+      duration: PropTypes.number.isRequired,
+    })
+  ),
+  part: PropTypes.shape({
+    part: PropTypes.number.isRequired,
+    timestamp: PropTypes.number.isRequired,
+  }),
+  games: PropTypes.arrayOf(
+    PropTypes.shape({
+      video_id: PropTypes.string.isRequired,
+      game_name: PropTypes.string,
+      start_time: PropTypes.string.isRequired,
+    })
+  ),
+  isYoutubeVod: PropTypes.bool,
+  playerState: PropTypes.number,
+  setUserChatDelay: PropTypes.func,
+  twitchId: PropTypes.string,
+  archiveApiBase: PropTypes.string.isRequired,
+};
 
 const AbortController =
   window.AbortController ||
@@ -23,10 +55,6 @@ const AbortController =
       this.signal.aborted = true;
     }
   };
-
-//ENV
-const twitchId = import.meta.env.VITE_TWITCH_ID,
-  ARCHIVE_API_BASE = import.meta.env.VITE_ARCHIVE_API_BASE;
 
 // CDN URLs for emotes and badges
 const BASE_TWITCH_CDN = 'https://static-cdn.jtvnw.net';
@@ -49,7 +77,7 @@ const sanitizeEmoteData = (emote) => {
 };
 
 export default function Chat(props) {
-  const { isPortrait, vodId, playerRef, userChatDelay, delay, youtube, part, games, isYoutubeVod, playerState, setUserChatDelay } = props;
+  const { isPortrait, vodId, playerRef, userChatDelay, delay, youtube, part, games, isYoutubeVod, playerState, setUserChatDelay, twitchId, ARCHIVE_API_BASE } = props;
 
   // State management
   const [showChat, setShowChat] = useState(true);
@@ -171,7 +199,7 @@ export default function Chat(props) {
     };
 
     const loadBTTVChannelEmotes = async () => {
-      await fetch(`${BASE_BTTV_EMOTE_API}/cached/users/twitch/${twitchId}`, {
+      await fetch(`${BASE_BTTV_EMOTE_API}/cached/users/twitch/${twitchId || ''}`, {
         method: 'GET',
       })
         .then((response) => response.json())
@@ -202,7 +230,7 @@ export default function Chat(props) {
     };
 
     const load7TVEmotes = async () => {
-      await fetch(`${BASE_7TV_EMOTE_API}/users/twitch/${twitchId}`, {
+      await fetch(`${BASE_7TV_EMOTE_API}/users/twitch/${twitchId || ''}`, {
         method: 'GET',
       })
         .then((response) => response.json())
@@ -235,7 +263,7 @@ export default function Chat(props) {
 
     loadEmotes();
     loadBadges();
-  }, [vodId]);
+  }, [vodId, ARCHIVE_API_BASE, twitchId]);
 
   // === MEMOIZED VALUES ===
   const emoteLookup = useMemo(() => {
@@ -682,7 +710,7 @@ export default function Chat(props) {
       stoppedAtIndex.current = lastIndex;
       if (comments.current.length - 1 === lastIndex) fetchNextComments();
     }
-  }, [getCurrentTime, playerRef, vodId, showTimestamp, transformMessage, isPlaying, shouldFilterMessage]);
+  }, [getCurrentTime, playerRef, vodId, showTimestamp, transformMessage, isPlaying, shouldFilterMessage, ARCHIVE_API_BASE]);
 
   useEffect(() => {
     if (!isAtBottomRef.current || shownMessages.length === 0) return;
@@ -798,7 +826,7 @@ export default function Chat(props) {
         currentChatRef.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [vodId, playerRef, playerState, getCurrentTime, handleScroll, loop, isPlaying]);
+  }, [vodId, playerRef, playerState, getCurrentTime, handleScroll, loop, isPlaying, ARCHIVE_API_BASE]);
 
   const stopLoop = () => {
     if (loopRef.current !== null) clearInterval(loopRef.current);
