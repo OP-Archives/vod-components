@@ -15,14 +15,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
       
-      - name: Configure npm for GitHub Packages
+      - name: Configure scoped registry
         run: |
-          export NPM_CONFIG_USERCONFIG=/tmp/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" > $NPM_CONFIG_USERCONFIG
-          echo "@op-archives:registry=https://npm.pkg.github.com/" >> $NPM_CONFIG_USERCONFIG
-          cat $NPM_CONFIG_USERCONFIG
-          npm config list
+          npm config set @op-archives:registry=https://npm.pkg.github.com/
       
       - name: Install dependencies
         run: npm ci
