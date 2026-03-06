@@ -2,12 +2,10 @@ import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import CustomLink from './CustomLink';
 
-const NOT_FOUND_LOGO = process.env.NOT_FOUND_LOGO || null;
-
 const NotFound = styled((props) => {
   const { channel, logo } = props;
   document.title = `Not Found - ${channel}`;
-  const siteLogo = logo || NOT_FOUND_LOGO;
+  const siteLogo = import.meta.env.VITE_NOT_FOUND_LOGO || logo || null;
   
   return (
     <div {...props}>
