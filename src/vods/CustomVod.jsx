@@ -13,10 +13,11 @@ import PropTypes from 'prop-types';
 CustomVod.propTypes = {
   archiveApiBase: PropTypes.string.isRequired,
   channel: PropTypes.string.isRequired,
+  logo: PropTypes.string.isRequired,
 };
 
 export default function CustomVod(props) {
-  const { archiveApiBase, channel } = props;
+  const { archiveApiBase, channel, logo } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -89,13 +90,13 @@ export default function CustomVod(props) {
     return;
   }, [playerState, vodId, playerRef]);
 
-  if (vod === undefined) return <Loading />;
+  if (vod === undefined) return <Loading logo={logo} />;
 
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
         <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%' }}>
-          <BaseVod {...props} playerRef={playerRef} vod={vod} timestamp={timestamp} setTimestamp={setTimestamp} setDelay={setDelay} setPlayerState={setPlayerState} />
+          <BaseVod {...props} logo={logo} playerRef={playerRef} vod={vod} timestamp={timestamp} setTimestamp={setTimestamp} setDelay={setDelay} setPlayerState={setPlayerState} />
         </Box>
         {isPortrait && <Divider />}
         <Chat

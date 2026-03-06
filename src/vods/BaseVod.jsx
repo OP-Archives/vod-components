@@ -21,6 +21,7 @@ import PropTypes from 'prop-types';
 import ExpandMore from '../utils/ExpandMore';
 
 BaseVod.propTypes = {
+  origin: PropTypes.string,
   isYoutubeVod: PropTypes.bool,
   youtube: PropTypes.arrayOf(
     PropTypes.shape({
@@ -65,7 +66,7 @@ BaseVod.propTypes = {
 };
 
 export default function BaseVod(props) {
-  const { isYoutubeVod, youtube, handlePartChange, playerRef, part, setPart, vod, type, setDelay, timestamp, setTimestamp, setPlayerState, games, isPortrait } = props;
+  const { origin, isYoutubeVod, youtube, handlePartChange, playerRef, part, setPart, vod, type, setDelay, timestamp, setTimestamp, setPlayerState, games, isPortrait } = props;
   const [chapter, setChapter] = useState(undefined);
   const [showMenu, setShowMenu] = useState(true);
   const [currentTime, setCurrentTime] = useState(undefined);
@@ -94,8 +95,6 @@ export default function BaseVod(props) {
     navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?t=${toHMS(currentTime)}`);
   };
 
-  if (vod === undefined) return <Loading />;
-
   return (
     <Box
       sx={{
@@ -120,9 +119,9 @@ export default function BaseVod(props) {
         }}
       >
         {isYoutubeVod ? (
-          <YoutubePlayer playerRef={playerRef} part={part} youtube={youtube} setCurrentTime={setCurrentTime} setPart={setPart} setPlayerState={setPlayerState} />
+          <YoutubePlayer playerRef={playerRef} part={part} youtube={youtube} setCurrentTime={setCurrentTime} setPart={setPart} setPlayerState={setPlayerState} origin={origin} />
         ) : games ? (
-          <YoutubePlayer playerRef={playerRef} part={part} games={games} setPart={setPart} setPlayerState={setPlayerState} />
+          <YoutubePlayer playerRef={playerRef} part={part} games={games} setPart={setPart} setPlayerState={setPlayerState} origin={origin} />
         ) : (
           <CustomPlayer playerRef={playerRef} setCurrentTime={setCurrentTime} setDelay={setDelay} type={type} vod={vod} timestamp={timestamp} setPlayerState={setPlayerState} />
         )}

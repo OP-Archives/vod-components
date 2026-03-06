@@ -12,10 +12,11 @@ import PropTypes from 'prop-types';
 Games.propTypes = {
   archiveApiBase: PropTypes.string.isRequired,
   channel: PropTypes.string.isRequired,
+  logo: PropTypes.string.isRequired,
 };
 
 export default function Games(props) {
-  const { archiveApiBase, channel } = props;
+  const { archiveApiBase, channel, logo } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -66,14 +67,14 @@ export default function Games(props) {
     return;
   }, [userChatDelay]);
 
-  if (vod === undefined || part === undefined) return <Loading />;
+  if (vod === undefined || part === undefined) return <Loading logo={logo} />;
 
-  if (games.length === 0) return <NotFound />;
+  if (games.length === 0) return <NotFound channel={channel} logo={logo} />;
 
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
-        <BaseVod {...props} handlePartChange={handlePartChange} games={games} playerRef={playerRef} part={part} setPart={setPart} vod={vod} setPlayerState={setPlayerState} />
+        <BaseVod {...props} logo={logo} handlePartChange={handlePartChange} games={games} playerRef={playerRef} part={part} setPart={setPart} vod={vod} setPlayerState={setPlayerState} />
         {isPortrait && <Divider />}
         <Chat
           isPortrait={isPortrait}

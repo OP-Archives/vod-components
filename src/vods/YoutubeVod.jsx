@@ -16,10 +16,11 @@ YoutubeVod.propTypes = {
   archiveApiBase: PropTypes.string.isRequired,
   channel: PropTypes.string.isRequired,
   defaultDelay: PropTypes.number,
+  logo: PropTypes.string.isRequired,
 };
 
 export default function YoutubeVod(props) {
-  const { type, archiveApiBase, channel, defaultDelay } = props;
+  const { type, archiveApiBase, channel, defaultDelay, logo } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -133,15 +134,27 @@ export default function YoutubeVod(props) {
     console.info(`Chat Delay: ${userChatDelay + delay} seconds`);
   }, [userChatDelay, delay]);
 
-  if (vod === undefined || part === undefined || delay === undefined || youtube === undefined) return <Loading />;
+  if (vod === undefined || part === undefined || delay === undefined || youtube === undefined) return <Loading logo={logo} />;
 
-  if (youtube.length === 0) return <NotFound channel={channel} />;
+  if (youtube.length === 0) return <NotFound channel={channel} logo={logo} />;
 
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
         <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%' }}>
-          <BaseVod {...props} handlePartChange={handlePartChange} youtube={youtube} isYoutubeVod={true} playerRef={playerRef} part={part} setPart={setPart} vod={vod} setPlayerState={setPlayerState} />
+          <BaseVod
+            {...props}
+            logo={logo}
+            handlePartChange={handlePartChange}
+            youtube={youtube}
+            isYoutubeVod={true}
+            playerRef={playerRef}
+            part={part}
+            setPart={setPart}
+            vod={vod}
+            setPlayerState={setPlayerState}
+            origin={channel}
+          />
         </Box>
         {isPortrait && <Divider />}
         <Chat
