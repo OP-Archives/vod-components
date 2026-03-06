@@ -8,9 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -24,6 +26,17 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        run: npm version patch -m "chore: bump version to %s [skip ci]"
+
+      - name: Push version bump
+        run: git push
 
       - name: Publish to GitHub Packages
         run: npm publish --access public
