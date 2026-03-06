@@ -25,10 +25,7 @@ jobs:
       
       - name: Publish to GitHub Packages
         run: |
-          npm config set //npm.pkg.github.com/:_authToken "${{ secrets.NPM_TOKEN }}"
-          npm config set @op-archives:registry=https://npm.pkg.github.com/
-          npm whoami
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+          npm whoami || (echo "whoami failed, checking token..." && echo "Token length: ${{ secrets.NPM_TOKEN }}")
           npm config get registry
           npm publish --access public 2>&1 || (echo "Publish failed" && exit 1)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
