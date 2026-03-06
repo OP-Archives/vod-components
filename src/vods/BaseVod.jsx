@@ -11,7 +11,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Loading from '../utils/Loading';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VodChapters from './VodChapters';
-import CustomWidthTooltip from '../utils/CustomToolTip';
+import CustomWidthTooltip from './Chat/CustomToolTip';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { toHMS } from '../utils/helpers';
 import YoutubePlayer from './YoutubePlayer';
