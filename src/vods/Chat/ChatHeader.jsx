@@ -6,7 +6,6 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PropTypes from 'prop-types';
 import ExpandMore from '../../utils/ExpandMore';
-import CustomToolTip from './CustomToolTip';
 
 ChatHeader.propTypes = {
   isPortrait: PropTypes.bool,
