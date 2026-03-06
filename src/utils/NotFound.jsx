@@ -5,7 +5,7 @@ import CustomLink from './CustomLink';
 const NotFound = styled((props) => {
   const { channel, logo } = props;
   document.title = `Not Found - ${channel}`;
-  const siteLogo = import.meta.env.VITE_NOT_FOUND_LOGO || logo || null;
+  const siteLogo = logo || null;
 
   return (
     <div {...props}>

@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 
 export default function Loading({ logo }) {
-  const loadingLogo = import.meta.env.VITE_LOADING_LOGO || logo || null;
+  const loadingLogo = logo || null;
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%', flexDirection: 'column' }}>
