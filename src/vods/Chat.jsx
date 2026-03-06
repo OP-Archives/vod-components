@@ -45,7 +45,7 @@ const sanitizeEmoteData = (emote) => {
 };
 
 export default function Chat(props) {
-  const { isPortrait, vodId, playerRef, userChatDelay, delay, youtube, part, games, isYoutubeVod, playerState, setUserChatDelay, twitchId, ARCHIVE_API_BASE } = props;
+  const { isPortrait, vodId, playerRef, userChatDelay, delay, youtube, part, games, isYoutubeVod, playerState, setUserChatDelay, twitchId, archiveApiBase } = props;
 
   // State management
   const [showChat, setShowChat] = useState(true);
@@ -97,7 +97,7 @@ export default function Chat(props) {
   // === EFFECT HOOKS ===
   useEffect(() => {
     const loadBadges = () => {
-      fetch(`${ARCHIVE_API_BASE}/v2/badges`, {
+      fetch(`${archiveApiBase}/v2/badges`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export default function Chat(props) {
     };
 
     const loadArchiveEmotes = async () => {
-      await fetch(`${ARCHIVE_API_BASE}/emotes?vod_id=${vodId}`, {
+      await fetch(`${archiveApiBase}/emotes?vod_id=${vodId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ export default function Chat(props) {
 
     loadEmotes();
     loadBadges();
-  }, [vodId, ARCHIVE_API_BASE, twitchId]);
+  }, [vodId, archiveApiBase, twitchId]);
 
   // === MEMOIZED VALUES ===
   const emoteLookup = useMemo(() => {
@@ -493,7 +493,7 @@ export default function Chat(props) {
     if (stoppedAtIndex.current === lastIndex && stoppedAtIndex.current !== 0) return;
 
     const fetchNextComments = () => {
-      fetch(`${ARCHIVE_API_BASE}/v1/vods/${vodId}/comments?cursor=${cursor.current}`, {
+      fetch(`${archiveApiBase}/v1/vods/${vodId}/comments?cursor=${cursor.current}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -678,7 +678,7 @@ export default function Chat(props) {
       stoppedAtIndex.current = lastIndex;
       if (comments.current.length - 1 === lastIndex) fetchNextComments();
     }
-  }, [getCurrentTime, playerRef, vodId, showTimestamp, transformMessage, isPlaying, shouldFilterMessage, ARCHIVE_API_BASE]);
+  }, [getCurrentTime, playerRef, vodId, showTimestamp, transformMessage, isPlaying, shouldFilterMessage, archiveApiBase]);
 
   useEffect(() => {
     if (!isAtBottomRef.current || shownMessages.length === 0) return;
@@ -758,7 +758,7 @@ export default function Chat(props) {
 
       fetchControllerRef.current = new AbortController();
 
-      fetch(`${ARCHIVE_API_BASE}/v1/vods/${vodId}/comments?content_offset_seconds=${Math.floor(offset)}`, {
+      fetch(`${archiveApiBase}/v1/vods/${vodId}/comments?content_offset_seconds=${Math.floor(offset)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -794,7 +794,7 @@ export default function Chat(props) {
         currentChatRef.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [vodId, playerRef, playerState, getCurrentTime, handleScroll, loop, isPlaying, ARCHIVE_API_BASE]);
+  }, [vodId, playerRef, playerState, getCurrentTime, handleScroll, loop, isPlaying, archiveApiBase]);
 
   const stopLoop = () => {
     if (loopRef.current !== null) clearInterval(loopRef.current);

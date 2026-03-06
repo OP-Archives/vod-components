@@ -77,6 +77,7 @@ export default function Games(props) {
         <BaseVod {...props} logo={logo} handlePartChange={handlePartChange} games={games} playerRef={playerRef} part={part} setPart={setPart} vod={vod} setPlayerState={setPlayerState} />
         {isPortrait && <Divider />}
         <Chat
+          archiveApiBase={archiveApiBase}
           isPortrait={isPortrait}
           vodId={vodId}
           playerRef={playerRef}

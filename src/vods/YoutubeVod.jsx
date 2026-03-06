@@ -158,6 +158,7 @@ export default function YoutubeVod(props) {
         </Box>
         {isPortrait && <Divider />}
         <Chat
+          archiveApiBase={archiveApiBase}
           isPortrait={isPortrait}
           vodId={vodId}
           playerRef={playerRef}
