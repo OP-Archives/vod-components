@@ -25,7 +25,7 @@ jobs:
       
       - name: Publish to GitHub Packages
         run: |
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          npm config set //npm.pkg.github.com/:_authToken "${{ secrets.NPM_TOKEN }}"
           npm whoami
           npm config get registry
           npm publish --access public 2>&1 || (echo "Publish failed" && exit 1)
