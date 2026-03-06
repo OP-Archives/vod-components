@@ -11,6 +11,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Loading from '../utils/Loading';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VodChapters from './VodChapters';
+const Chapters = VodChapters;
 import ExpandMore from '../utils/ExpandMore';
 import CustomWidthTooltip from '../utils/CustomToolTip';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
