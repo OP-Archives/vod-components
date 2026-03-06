@@ -1,9 +1,9 @@
 import { styled } from '@mui/material/styles';
 import Link from '@mui/material/Link';
 
-const CustomLink = styled((props) => <Link {...props} />)`
+const CustomLink = styled(Link)`
   &:hover {
-    opacity: 50%;
+    opacity: 0.5;
   }
 `;
 

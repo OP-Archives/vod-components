@@ -50,13 +50,7 @@
     "vite-plugin-dts": "^4.5.0"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@feathersjs/feathers": "^5.0.42",
-    "@feathersjs/rest-client": "^5.0.42",
-    "@mui/x-date-pickers": "^8.27.2",
     "can-autoplay": "^3.0.2",
-    "dayjs": "^1.11.19",
     "humanize-duration": "^3.32.1",
     "prop-types": "^15.8.1",
     "react-router-dom": "^7.13.1",
