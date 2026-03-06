@@ -17,6 +17,11 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com'
       
+      - name: Configure scoped registry
+        run: |
+          npm config set @op-archives:registry=https://npm.pkg.github.com/
+          npm config list
+      
       - name: Install dependencies
         run: npm ci
       
