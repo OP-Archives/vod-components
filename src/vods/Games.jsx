@@ -52,8 +52,11 @@ export default function Games(props) {
     if (!vod) return;
     setGames(vod.games);
     const search = new URLSearchParams(location.search);
-    let tmpPart = search.get('part') !== null ? parseInt(search.get('part')) : 1;
-    setPart({ part: tmpPart, timestamp: 0 });
+
+    //Check if game id is in query
+    const game_id = search.get('game_id') !== null ? parseInt(search.get('game_id')) : undefined;
+    const index = vod.games.findIndex((game) => parseInt(game.id) === game_id);
+    setPart({ part: index === -1 ? 1 : index + 1, timestamp: 0 });
     return;
   }, [vod, location.search]);
 

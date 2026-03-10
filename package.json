@@ -3,13 +3,12 @@
   "version": "0.1.7",
   "description": "Shared VOD player components for OP-Archives streamer sites",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "main": "./dist/index.es.js",
+  "module": "./dist/index.es.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.es.js"
     },
     "./utils/*": "./dist/utils/*.js",
     "./vods/*": "./dist/vods/*.js"
@@ -50,6 +49,8 @@
     "vite-plugin-dts": "^4.5.0"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "can-autoplay": "^3.0.2",
     "humanize-duration": "^3.32.1",
     "prop-types": "^15.8.1",

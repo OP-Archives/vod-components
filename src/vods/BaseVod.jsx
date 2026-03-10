@@ -8,7 +8,6 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import Loading from '../utils/Loading';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VodChapters from './VodChapters';
 import CustomWidthTooltip from '../utils/CustomToolTip';
@@ -17,53 +16,7 @@ import { toHMS } from '../utils/helpers';
 import YoutubePlayer from './YoutubePlayer';
 import CustomPlayer from './CustomPlayer';
 import { saveResumePosition } from '../utils/positionStorage';
-import PropTypes from 'prop-types';
 import ExpandMore from '../utils/ExpandMore';
-
-BaseVod.propTypes = {
-  origin: PropTypes.string,
-  isYoutubeVod: PropTypes.bool,
-  youtube: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      part: PropTypes.number,
-      duration: PropTypes.number.isRequired,
-    })
-  ),
-  handlePartChange: PropTypes.func,
-  playerRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
-  part: PropTypes.shape({
-    part: PropTypes.number.isRequired,
-    timestamp: PropTypes.number.isRequired,
-  }).isRequired,
-  setPart: PropTypes.func.isRequired,
-  vod: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    title: PropTypes.string.isRequired,
-    chapters: PropTypes.arrayOf(
-      PropTypes.shape({
-        start: PropTypes.number.isRequired,
-        end: PropTypes.number.isRequired,
-        name: PropTypes.string.isRequired,
-        image: PropTypes.string.isRequired,
-      })
-    ).isRequired,
-  }),
-  type: PropTypes.string,
-  setDelay: PropTypes.func,
-  timestamp: PropTypes.number,
-  setTimestamp: PropTypes.func,
-  setPlayerState: PropTypes.func.isRequired,
-  games: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      game_name: PropTypes.string.isRequired,
-      video_id: PropTypes.string.isRequired,
-      start_time: PropTypes.string.isRequired,
-    })
-  ),
-  isPortrait: PropTypes.bool,
-};
 
 export default function BaseVod(props) {
   const { origin, isYoutubeVod, youtube, handlePartChange, playerRef, part, setPart, vod, type, setDelay, timestamp, setTimestamp, setPlayerState, games, isPortrait } = props;
@@ -135,7 +88,9 @@ export default function BaseVod(props) {
       </Box>
       <Collapse in={showMenu} timeout="auto" unmountOnExit sx={{ minHeight: 'auto !important', width: '100%' }}>
         <Box sx={{ display: 'flex', p: 1, alignItems: 'center' }}>
-          {chapter && <VodChapters chapters={vod.chapters} chapter={chapter} setChapter={setChapter} setTimestamp={setTimestamp} setPart={setPart} youtube={youtube} isYoutubeVod={isYoutubeVod} />}
+          {chapter && !games && (
+            <VodChapters chapters={vod.chapters} chapter={chapter} setChapter={setChapter} setTimestamp={setTimestamp} setPart={setPart} youtube={youtube} isYoutubeVod={isYoutubeVod} />
+          )}
           <CustomWidthTooltip title={vod.title}>
             <Typography fontWeight={550} variant="body1" noWrap={true}>{`${vod.title}`}</Typography>
           </CustomWidthTooltip>

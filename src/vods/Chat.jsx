@@ -258,7 +258,7 @@ export default function Chat(props) {
         time += video.duration;
       }
       time += playerRef.current.getCurrentTime() ?? 0;
-    } else if (games && isYoutubeVod) {
+    } else if (games) {
       time += parseFloat(games[part.part - 1].start_time);
       time += playerRef.current.getCurrentTime() ?? 0;
     } else {
@@ -271,8 +271,8 @@ export default function Chat(props) {
 
   const isPlaying = useCallback(() => {
     if (!playerRef.current) return false;
-    return isYoutubeVod ? playerRef.current.getPlayerState() === 1 : playerRef.current.paused() === false;
-  }, [isYoutubeVod, playerRef]);
+    return isYoutubeVod || games ? playerRef.current.getPlayerState() === 1 : playerRef.current.paused() === false;
+  }, [isYoutubeVod, games, playerRef]);
 
   const getEmoteImageUrl = useCallback((emote, type, size = 1) => {
     switch (type) {
@@ -407,7 +407,7 @@ export default function Chat(props) {
 
   const transformMessage = useCallback(
     (fragments, keyPrefix) => {
-      if (!fragments) return;
+      if (!fragments) return null;
 
       const textFragments = [];
       for (const fragment of fragments) {
@@ -443,7 +443,9 @@ export default function Chat(props) {
                   );
 
                   // Replace the previous normal emote with the container
-                  textFragments[lastNormalEmoteIndex] = emoteContainer;
+                  if (lastNormalEmoteIndex >= 0 && lastNormalEmoteIndex < textFragments.length) {
+                    textFragments[lastNormalEmoteIndex] = emoteContainer;
+                  }
                   lastNormalEmote = null;
                   lastNormalEmoteIndex = -1;
                 } else {
@@ -471,7 +473,7 @@ export default function Chat(props) {
         }
       }
 
-      return <Box sx={{ display: 'inline' }}>{textFragments}</Box>;
+      return textFragments.length > 0 ? <Box sx={{ display: 'inline' }}>{textFragments}</Box> : null;
     },
     [emoteLookup, renderEmoteTooltip, SEVENTV_isZeroWidth, renderZeroWidthEmote]
   );
