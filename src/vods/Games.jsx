@@ -8,6 +8,7 @@ import NotFound from '../utils/NotFound';
 import Chat from './Chat';
 import BaseVod from './BaseVod';
 import PropTypes from 'prop-types';
+import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
 
 Games.propTypes = {
   archiveApiBase: PropTypes.string.isRequired,
@@ -56,13 +57,52 @@ export default function Games(props) {
     //Check if game id is in query
     const game_id = search.get('game_id') !== null ? parseInt(search.get('game_id')) : undefined;
     const index = vod.games.findIndex((game) => parseInt(game.id) === game_id);
-    setPart({ part: index === -1 ? 1 : index + 1, timestamp: 0 });
+
+    let savedTimestamp = 0;
+    const selectedGameIndex = index === -1 ? 0 : index;
+    const selectedGameId = vod.games[selectedGameIndex].id;
+    const savedPosition = getResumePosition(selectedGameId, 'game_');
+    if (savedPosition !== null) {
+      savedTimestamp = savedPosition;
+    }
+
+    setPart({ part: index === -1 ? 1 : index + 1, timestamp: savedTimestamp });
     return;
   }, [vod, location.search]);
 
+  // Handle Resume Positions depending on player state.
+  useEffect(() => {
+    if (playerState === -1 || !vodId || !playerRef.current) return;
+
+    const currentGame = games?.[part.part - 1];
+
+    switch (playerState) {
+      // Player States: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
+      case 0:
+        // Clear Resume Position when video has ended.
+        clearResumePosition(currentGame.id, 'game_');
+        break;
+      case 2:
+        const currentTime = playerRef.current?.getCurrentTime();
+        if (currentTime !== null && currentTime > 0) {
+          saveResumePosition(currentGame.id, currentTime, 'game_');
+        }
+        break;
+      default:
+        break;
+    }
+    return;
+  }, [playerState, games, playerRef]);
+
   const handlePartChange = (evt) => {
     const tmpPart = evt.target.value + 1;
-    setPart({ part: tmpPart, timestamp: 0 });
+    const selectedGameId = games[tmpPart - 1].id;
+    const savedPosition = getResumePosition(selectedGameId, 'game_');
+    let savedTimestamp = 0;
+    if (savedPosition !== null) {
+      savedTimestamp = savedPosition;
+    }
+    setPart({ part: tmpPart, timestamp: savedTimestamp });
   };
 
   useEffect(() => {

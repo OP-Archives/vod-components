@@ -1,17 +1,19 @@
 import { safeLocalStorage } from './safeLocalStorage';
 
 /**
- * Get the resume position for a VOD
- * @param {string} vodId - The VOD ID
+ * Get the resume position for a VOD or game
+ * @param {string} id - The VOD ID or Game ID
+ * @param {string} prefix - The prefix for the key ('vod_' or 'game_')
  * @returns {number|null} The saved timestamp or null if none exists
  */
-export const getResumePosition = (vodId) => {
+export const getResumePosition = (id, prefix = 'vod_') => {
   const savedPositions = safeLocalStorage.getItem('lastPlayed');
   if (savedPositions) {
     try {
       const positions = JSON.parse(savedPositions);
-      if (positions[vodId] !== undefined) {
-        return parseFloat(positions[vodId]);
+      const key = `${prefix}${id}`;
+      if (positions[key] !== undefined) {
+        return parseFloat(positions[key]);
       }
     } catch (error) {
       console.error('Error parsing resume positions:', error);
@@ -22,14 +24,15 @@ export const getResumePosition = (vodId) => {
   return null;
 };
 
-const MAX_POSITIONS = 100;
+const MAX_POSITIONS = 1000;
 
 /**
- * Save the resume position for a VOD
- * @param {string} vodId - The VOD ID
+ * Save the resume position for a VOD or game
+ * @param {string} id - The VOD ID or Game ID
  * @param {number} timestamp - The timestamp to save
+ * @param {string} prefix - The prefix for the key ('vod_' or 'game_')
  */
-export const saveResumePosition = (vodId, timestamp) => {
+export const saveResumePosition = (id, timestamp, prefix = 'vod_') => {
   let positions;
   try {
     positions = JSON.parse(safeLocalStorage.getItem('lastPlayed') || '{}');
@@ -38,7 +41,8 @@ export const saveResumePosition = (vodId, timestamp) => {
     positions = {};
   }
 
-  positions[vodId] = timestamp;
+  const key = `${prefix}${id}`;
+  positions[key] = timestamp;
 
   if (Object.keys(positions).length > MAX_POSITIONS) {
     const sortedEntries = Object.entries(positions)
@@ -52,16 +56,18 @@ export const saveResumePosition = (vodId, timestamp) => {
 };
 
 /**
- * Clear the resume position for a VOD
- * @param {string} vodId - The VOD ID
+ * Clear the resume position for a VOD or game
+ * @param {string} id - The VOD ID or Game ID
+ * @param {string} prefix - The prefix for the key ('vod_' or 'game_')
  */
-export const clearResumePosition = (vodId) => {
+export const clearResumePosition = (id, prefix = 'vod_') => {
   const savedPositions = safeLocalStorage.getItem('lastPlayed');
   if (!savedPositions) return;
 
   try {
     const positions = JSON.parse(savedPositions);
-    delete positions[vodId];
+    const key = `${prefix}${id}`;
+    delete positions[key];
     safeLocalStorage.setItem('lastPlayed', JSON.stringify(positions));
   } catch (error) {
     console.error('Error clearing resume position:', error);

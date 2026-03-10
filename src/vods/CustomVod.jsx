@@ -77,12 +77,12 @@ export default function CustomVod(props) {
       // Player States: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
       case 0:
         // Clear Resume Position when video has ended.
-        clearResumePosition(vodId);
+        clearResumePosition(vodId, 'vod_');
         break;
       case 2:
         // Save Resume Position when video has paused.
         const currentTime = playerRef.current.currentTime();
-        if (currentTime !== null && currentTime > 0) saveResumePosition(vodId, currentTime);
+        if (currentTime !== null && currentTime > 0) saveResumePosition(vodId, currentTime, 'vod_');
         break;
       default:
         break;

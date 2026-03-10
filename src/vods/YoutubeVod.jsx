@@ -110,12 +110,12 @@ export default function YoutubeVod(props) {
       // Player States: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
       case 0:
         // Clear Resume Position when video has ended.
-        clearResumePosition(vodId);
+        clearResumePosition(vodId, 'vod_');
         break;
       case 2:
         const currentTime = playerRef.current?.getCurrentTime();
         if (currentTime !== null && currentTime > 0) {
-          saveResumePosition(vodId, currentTime);
+          saveResumePosition(vodId, currentTime, 'vod_');
         }
         break;
       default:

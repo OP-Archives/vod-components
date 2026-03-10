@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import canAutoPlay from 'can-autoplay';
 import Youtube from 'react-youtube';
+import { getResumePosition } from '../utils/positionStorage';
 
 export default function YoutubePlayer(props) {
   const { youtube, playerRef, part, setPart, setCurrentTime, setPlayerState, games, origin } = props;
@@ -21,9 +22,11 @@ export default function YoutubePlayer(props) {
     if (!playerRef.current) return;
     if (playerRef.current.getPlayerState() !== 1) return;
     let currentTime = 0;
-    for (let video of youtube) {
-      if (video.part >= part.part) break;
-      currentTime += video.duration;
+    if (youtube) {
+      for (let video of youtube) {
+        if (video.part >= part.part) break;
+        currentTime += video.duration;
+      }
     }
     currentTime += playerRef.current.getCurrentTime() ?? 0;
     setCurrentTime(currentTime);
@@ -54,13 +57,11 @@ export default function YoutubePlayer(props) {
   };
 
   const onPlay = () => {
-    if (games) return;
     timeUpdate();
     loopTimeUpdate();
   };
 
   const onPause = () => {
-    if (games) return;
     clearTimeUpdate();
   };
 
@@ -69,10 +70,16 @@ export default function YoutubePlayer(props) {
 
     if (games) {
       if (nextPart > games.length) return;
-      setPart({ part: nextPart, duration: 0 });
+      const selectedGameId = games[nextPart - 1].id;
+      const savedPosition = getResumePosition(selectedGameId, 'game_');
+      let savedTimestamp = 0;
+      if (savedPosition !== null) {
+        savedTimestamp = savedPosition;
+      }
+      setPart({ part: nextPart, timestamp: savedTimestamp });
     } else {
       if (nextPart > youtube.length) return;
-      setPart({ part: nextPart, duration: 0 });
+      setPart({ part: nextPart, timestamp: 0 });
     }
   };
 

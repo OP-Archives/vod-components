@@ -32,13 +32,18 @@ export default function BaseVod(props) {
   useEffect(() => {
     if (!playerRef.current || !vod?.chapters?.length || currentTime === undefined) return;
 
-    const currentChapter = vod.chapters.find((chapter) => currentTime >= chapter.start && currentTime < chapter.start + chapter.end);
+    if (!games) {
+      const currentChapter = vod.chapters.find((chapter) => currentTime >= chapter.start && currentTime < chapter.start + chapter.end);
 
-    if (currentChapter) {
-      setChapter(currentChapter);
+      if (currentChapter) {
+        setChapter(currentChapter);
+      }
     }
-    saveResumePosition(vod.id, currentTime);
-  }, [currentTime, vod, playerRef]);
+    const currentGame = games?.[part.part - 1];
+    const saveId = currentGame ? currentGame.id : vod.id;
+    const prefix = currentGame ? 'game_' : 'vod_';
+    saveResumePosition(saveId, currentTime, prefix);
+  }, [currentTime, vod, playerRef, games, part]);
 
   const handleExpandClick = () => {
     setShowMenu(!showMenu);
@@ -74,7 +79,7 @@ export default function BaseVod(props) {
         {isYoutubeVod ? (
           <YoutubePlayer playerRef={playerRef} part={part} youtube={youtube} setCurrentTime={setCurrentTime} setPart={setPart} setPlayerState={setPlayerState} origin={origin} />
         ) : games ? (
-          <YoutubePlayer playerRef={playerRef} part={part} games={games} setPart={setPart} setPlayerState={setPlayerState} origin={origin} />
+          <YoutubePlayer playerRef={playerRef} part={part} games={games} setPart={setPart} setPlayerState={setPlayerState} setCurrentTime={setCurrentTime} origin={origin} />
         ) : (
           <CustomPlayer playerRef={playerRef} setCurrentTime={setCurrentTime} setDelay={setDelay} type={type} vod={vod} timestamp={timestamp} setPlayerState={setPlayerState} />
         )}
