@@ -41,18 +41,18 @@
     "@babel/preset-env": "^7.29.0",
     "@babel/preset-react": "^7.28.5",
     "@vitejs/plugin-react": "^5.1.4",
-    "eslint": "^9.17.0",
+    "eslint": "^9.39.4",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "vite": "^6.4.1",
-    "vite-plugin-dts": "^4.5.0"
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "can-autoplay": "^3.0.2",
-    "humanize-duration": "^3.32.1",
+    "humanize-duration": "^3.33.2",
     "prop-types": "^15.8.1",
     "react-router-dom": "^7.13.1",
     "react-twemoji": "^0.7.2",
@@ -60,7 +60,7 @@
     "simplebar-react": "^3.3.2",
     "tinyduration": "^3.4.1",
     "video.js": "^8.23.7",
-    "videojs-hotkeys": "^0.2.0"
+    "videojs-hotkeys": "^0.2.30"
   },
   "peerDependencies": {
     "@mui/icons-material": "^5.0.0 || ^6.0.0 || ^7.0.0",
