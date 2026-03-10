@@ -9,7 +9,7 @@ import 'videojs-hotkeys';
 import { toSeconds, sleep } from '../utils/helpers';
 
 export default function Player(props) {
-  const { playerRef, setCurrentTime, type, vod, timestamp, setDelay, setPlayerState } = props;
+  const { playerRef, setCurrentTime, type, vod, timestamp, setDelay, setPlayerState, cdnBase } = props;
   const timeUpdateRef = useRef(null);
   const [source, setSource] = useState(undefined);
   const [fileError, setFileError] = useState(undefined);
@@ -60,6 +60,15 @@ export default function Player(props) {
     player.on('playing', () => {
       setPlayerState(1);
     });
+
+    player.on('error', () => {
+      const error = player.error();
+      if (error && error.code === 4 && type === 'cdn') {
+        setSource(`${cdnBase}/videos/${vod.id}.mp4`);
+      }
+    });
+
+    if (type === 'cdn') setSource(`${cdnBase}/videos/${vod.id}/${vod.id}.m3u8`);
   };
 
   const timeUpdate = () => {

@@ -14,6 +14,7 @@ CustomVod.propTypes = {
   archiveApiBase: PropTypes.string.isRequired,
   channel: PropTypes.string.isRequired,
   logo: PropTypes.string.isRequired,
+  cdnBase: PropTypes.string,
 };
 
 export default function CustomVod(props) {
@@ -96,7 +97,7 @@ export default function CustomVod(props) {
     <Box sx={{ height: '100%', width: '100%' }}>
       <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
         <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%' }}>
-          <BaseVod {...props} logo={logo} playerRef={playerRef} vod={vod} timestamp={timestamp} setTimestamp={setTimestamp} setDelay={setDelay} setPlayerState={setPlayerState} />
+          <BaseVod {...props} logo={logo} playerRef={playerRef} vod={vod} timestamp={timestamp} setTimestamp={setTimestamp} setDelay={setDelay} setPlayerState={setPlayerState} cdnBase={cdnBase} />
         </Box>
         {isPortrait && <Divider />}
         <Chat

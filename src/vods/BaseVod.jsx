@@ -19,7 +19,7 @@ import { saveResumePosition } from '../utils/positionStorage';
 import ExpandMore from '../utils/ExpandMore';
 
 export default function BaseVod(props) {
-  const { origin, isYoutubeVod, youtube, handlePartChange, playerRef, part, setPart, vod, type, setDelay, timestamp, setTimestamp, setPlayerState, games, isPortrait } = props;
+  const { origin, isYoutubeVod, youtube, handlePartChange, playerRef, part, setPart, vod, type, setDelay, timestamp, setTimestamp, setPlayerState, games, isPortrait, cdnBase } = props;
   const [chapter, setChapter] = useState(undefined);
   const [showMenu, setShowMenu] = useState(true);
   const [currentTime, setCurrentTime] = useState(undefined);
@@ -81,7 +81,7 @@ export default function BaseVod(props) {
         ) : games ? (
           <YoutubePlayer playerRef={playerRef} part={part} games={games} setPart={setPart} setPlayerState={setPlayerState} setCurrentTime={setCurrentTime} origin={origin} />
         ) : (
-          <CustomPlayer playerRef={playerRef} setCurrentTime={setCurrentTime} setDelay={setDelay} type={type} vod={vod} timestamp={timestamp} setPlayerState={setPlayerState} />
+          <CustomPlayer playerRef={playerRef} setCurrentTime={setCurrentTime} setDelay={setDelay} type={type} vod={vod} timestamp={timestamp} setPlayerState={setPlayerState} cdnBase={cdnBase} />
         )}
       </Box>
       <Box sx={{ position: 'absolute', bottom: 0, left: '50%' }}>
