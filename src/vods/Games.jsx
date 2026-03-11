@@ -14,10 +14,11 @@ Games.propTypes = {
   archiveApiBase: PropTypes.string.isRequired,
   channel: PropTypes.string.isRequired,
   logo: PropTypes.string.isRequired,
+  twitchId: PropTypes.number.isRequired,
 };
 
 export default function Games(props) {
-  const { archiveApiBase, channel, logo } = props;
+  const { archiveApiBase, channel, logo, twitchId } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -130,6 +131,7 @@ export default function Games(props) {
           games={games}
           setUserChatDelay={setUserChatDelay}
           playerState={playerState}
+          twitchId={twitchId}
         />
       </Box>
     </Box>

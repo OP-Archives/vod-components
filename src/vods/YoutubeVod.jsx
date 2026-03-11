@@ -17,10 +17,11 @@ YoutubeVod.propTypes = {
   channel: PropTypes.string.isRequired,
   defaultDelay: PropTypes.number,
   logo: PropTypes.string.isRequired,
+  twitchId: PropTypes.number.isRequired,
 };
 
 export default function YoutubeVod(props) {
-  const { type, archiveApiBase, channel, defaultDelay, logo } = props;
+  const { type, archiveApiBase, channel, defaultDelay, logo, twitchId } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -177,6 +178,7 @@ export default function YoutubeVod(props) {
           setUserChatDelay={setUserChatDelay}
           isYoutubeVod={true}
           playerState={playerState}
+          twitchId={twitchId}
         />
       </Box>
     </Box>

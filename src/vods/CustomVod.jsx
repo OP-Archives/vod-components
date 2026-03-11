@@ -15,10 +15,11 @@ CustomVod.propTypes = {
   channel: PropTypes.string.isRequired,
   logo: PropTypes.string.isRequired,
   cdnBase: PropTypes.string,
+  twitchId: PropTypes.number.isRequired,
 };
 
 export default function CustomVod(props) {
-  const { archiveApiBase, channel, logo, cdnBase } = props;
+  const { archiveApiBase, channel, logo, cdnBase, twitchId } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();

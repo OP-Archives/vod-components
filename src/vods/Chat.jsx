@@ -167,7 +167,7 @@ export default function Chat(props) {
     };
 
     const loadBTTVChannelEmotes = async () => {
-      await fetch(`${BASE_BTTV_EMOTE_API}/cached/users/twitch/${twitchId || ''}`, {
+      await fetch(`${BASE_BTTV_EMOTE_API}/cached/users/twitch/${twitchId}`, {
         method: 'GET',
       })
         .then((response) => response.json())
@@ -198,7 +198,7 @@ export default function Chat(props) {
     };
 
     const load7TVEmotes = async () => {
-      await fetch(`${BASE_7TV_EMOTE_API}/users/twitch/${twitchId || ''}`, {
+      await fetch(`${BASE_7TV_EMOTE_API}/users/twitch/${twitchId}`, {
         method: 'GET',
       })
         .then((response) => response.json())
