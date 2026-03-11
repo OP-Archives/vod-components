@@ -58,9 +58,9 @@ export default function Player(props) {
 
   // HLS streaming with MP4 fallback
   useEffect(() => {
-    if (type === 'cdn' && source) {
+    if (type === 'cdn') {
       const hlsUrl = `${cdnBase}/videos/${vod.id}/${vod.id}.m3u8`;
-      const mp4Url = `${cdnBase}/videos/${vod.id}.mp4`;
+      setSource(hlsUrl);
 
       if (Hls.isSupported()) {
         hlsInstance.current = new Hls(hlsConfig);
@@ -73,12 +73,6 @@ export default function Player(props) {
               case Hls.ErrorTypes.NETWORK_ERROR:
               case Hls.ErrorTypes.MEDIA_ERROR:
                 hlsInstance.current.destroy();
-                // Update source to MP4 URL
-                setSource(mp4Url);
-                playerRef.current.src = mp4Url;
-                playerRef.current.load();
-                // Auto-play after fallback
-                playerRef.current.play().catch(() => {});
                 break;
               default:
                 hlsInstance.current.destroy();
@@ -97,7 +91,7 @@ export default function Player(props) {
       if (hlsInstance.current) hlsInstance.current.destroy();
       stopLoop();
     };
-  }, [type, source, cdnBase, vod.id, playerRef, stopLoop]);
+  }, [type, cdnBase, vod.id, playerRef, stopLoop]);
 
   const timeUpdate = useCallback(() => {
     if (!playerRef.current || playerRef.current.paused) return;
@@ -371,10 +365,8 @@ export default function Player(props) {
           outline: 'none',
           position: 'relative',
           overflow: 'hidden',
-          cursor: 'pointer',
         }}
         onDoubleClick={toggleFullscreen}
-        onClick={() => playerRef.current?.focus()}
       >
         {/* Native video element */}
         <video
