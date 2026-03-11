@@ -203,11 +203,13 @@ export default function YoutubePlayer(props) {
             {theatreMode ? <WidthNormalIcon fontSize="small" /> : <WidthFullIcon fontSize="small" />}
           </IconButton>
         </Tooltip>
-        <Tooltip title={`Copy Current Timestamp`}>
-          <IconButton onClick={copyTimestamp} color="inherit" aria-label="Copy Current Timestamp" rel="noopener noreferrer" target="_blank">
-            <ContentCopyIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        {!games && (
+          <Tooltip title={`Copy Current Timestamp`}>
+            <IconButton onClick={copyTimestamp} color="inherit" aria-label="Copy Current Timestamp" rel="noopener noreferrer" target="_blank">
+              <ContentCopyIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
     </Box>
   );
