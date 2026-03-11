@@ -4,14 +4,9 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ExpandMore from '../../utils/ExpandMore';
 
 export default function ChatHeader(props) {
   const { isPortrait, showChat, setShowChat, setShowModal } = props;
-
-  const handleExpandClick = () => {
-    setShowChat(!showChat);
-  };
 
   return (
     <Box sx={{ display: 'grid', alignItems: 'center', p: 1 }}>
@@ -24,9 +19,9 @@ export default function ChatHeader(props) {
           }}
         >
           <Tooltip title="Collapse">
-            <ExpandMore expand={showChat} onClick={handleExpandClick} aria-expanded={showChat}>
+            <IconButton onClick={() => setShowChat(!showChat)}>
               <ChevronLeftIcon />
-            </ExpandMore>
+            </IconButton>
           </Tooltip>
         </Box>
       )}

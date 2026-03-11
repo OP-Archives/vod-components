@@ -10,8 +10,8 @@ import { toHHMMSS } from '../utils/helpers';
 import ChatHeader from './Chat/ChatHeader';
 import ChatMessages from './Chat/ChatMessages';
 import ChatSettingsModal from './Chat/ChatSettingsModal';
-import ExpandMore from '../utils/ExpandMore';
 import MessageTooltip from './Chat/MessageTooltip';
+import IconButton from '@mui/material/IconButton';
 
 const AbortController =
   window.AbortController ||
@@ -262,7 +262,7 @@ export default function Chat(props) {
       time += parseFloat(games[part.part - 1].start_time);
       time += playerRef.current.getCurrentTime() ?? 0;
     } else {
-      time += playerRef.current.currentTime() ?? 0;
+      time += playerRef.current.currentTime ?? 0;
     }
     time += delay ?? 0;
     time += userChatDelay ?? 0;
@@ -271,7 +271,7 @@ export default function Chat(props) {
 
   const isPlaying = useCallback(() => {
     if (!playerRef.current) return false;
-    return isYoutubeVod || games ? playerRef.current.getPlayerState() === 1 : playerRef.current.paused() === false;
+    return isYoutubeVod || games ? playerRef.current.getPlayerState() === 1 : !playerRef.current.paused;
   }, [isYoutubeVod, games, playerRef]);
 
   const getEmoteImageUrl = useCallback((emote, type, size = 1) => {
@@ -495,20 +495,31 @@ export default function Chat(props) {
     if (stoppedAtIndex.current === lastIndex && stoppedAtIndex.current !== 0) return;
 
     const fetchNextComments = () => {
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+
+      fetchControllerRef.current = new AbortController();
+
       fetch(`${archiveApiBase}/v1/vods/${vodId}/comments?cursor=${cursor.current}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: fetchControllerRef.current.signal,
       })
         .then((response) => response.json())
         .then((response) => {
-          stoppedAtIndex.current = 0;
-          comments.current = response.comments;
-          cursor.current = response.cursor;
+          if (fetchControllerRef.current && !fetchControllerRef.current.signal.aborted) {
+            stoppedAtIndex.current = 0;
+            comments.current = response.comments;
+            cursor.current = response.cursor;
+          }
         })
         .catch((e) => {
-          console.error(e);
+          if (e.name !== 'AbortError') {
+            console.error(e);
+          }
         });
     };
 
@@ -850,10 +861,6 @@ export default function Chat(props) {
     });
   };
 
-  const handleExpandClick = () => {
-    setShowChat(!showChat);
-  };
-
   // === RENDERING ===
   return (
     <Box
@@ -876,9 +883,9 @@ export default function Chat(props) {
       {!isPortrait && !showChat && (
         <Box sx={{ position: 'absolute', right: 0, top: 0 }}>
           <Tooltip title="Expand">
-            <ExpandMore expand={showChat} onClick={handleExpandClick} aria-expanded={showChat}>
+            <IconButton onClick={() => setShowChat(!showChat)}>
               <ChevronRightIcon />
-            </ExpandMore>
+            </IconButton>
           </Tooltip>
         </Box>
       )}

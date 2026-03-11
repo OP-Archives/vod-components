@@ -1,11 +1,21 @@
-import { useEffect, useRef } from 'react';
-import canAutoPlay from 'can-autoplay';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Youtube from 'react-youtube';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import WidthFullIcon from '@mui/icons-material/WidthFull';
+import WidthNormalIcon from '@mui/icons-material/WidthNormal';
 import { getResumePosition } from '../utils/positionStorage';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 export default function YoutubePlayer(props) {
-  const { youtube, playerRef, part, setPart, setCurrentTime, setPlayerState, games, origin } = props;
-  const timeUpdateRef = useRef(null);
+  const { youtube, playerRef, part, setPart, setCurrentTime, setPlayerState, games, origin, setTheatreMode, theatreMode, copyTimestamp } = props;
+  const timeIntervalRef = useRef(null);
+  const [showControls, setShowControls] = useState(true);
+  const playerContainerRef = useRef(null);
+  const isTouchDevice = useMediaQuery('(pointer: coarse)');
+  const autoHideTimerRef = useRef(null);
 
   useEffect(() => {
     if (!playerRef.current) return;
@@ -18,9 +28,8 @@ export default function YoutubePlayer(props) {
     }
   }, [part, playerRef, youtube, games]);
 
-  const timeUpdate = () => {
-    if (!playerRef.current) return;
-    if (playerRef.current.getPlayerState() !== 1) return;
+  const timeUpdate = useCallback(() => {
+    if (!playerRef.current || playerRef.current.getPlayerState() !== 1) return;
     let currentTime = 0;
     if (youtube) {
       for (let video of youtube) {
@@ -30,23 +39,23 @@ export default function YoutubePlayer(props) {
     }
     currentTime += playerRef.current.getCurrentTime() ?? 0;
     setCurrentTime(currentTime);
-  };
+  }, [playerRef, youtube, part.part, setCurrentTime]);
 
-  const loopTimeUpdate = () => {
-    if (timeUpdateRef.current !== null) clearTimeout(timeUpdateRef.current);
-    timeUpdateRef.current = setTimeout(() => {
-      timeUpdate();
-      loopTimeUpdate();
-    }, 1000);
-  };
+  const startLoop = useCallback(() => {
+    if (timeIntervalRef.current) clearInterval(timeIntervalRef.current);
+    timeIntervalRef.current = setInterval(timeUpdate, 1000);
+  }, [timeUpdate]);
+
+  const stopLoop = useCallback(() => {
+    if (timeIntervalRef.current) {
+      clearInterval(timeIntervalRef.current);
+      timeIntervalRef.current = null;
+    }
+  }, []);
 
   const onReady = (evt) => {
     const player = evt.target;
     playerRef.current = player;
-
-    canAutoPlay.video().then(({ result }) => {
-      if (!result) player.mute();
-    });
 
     if (games) {
       playerRef.current.loadVideoById(games[part.part - 1].video_id, part.timestamp);
@@ -58,11 +67,11 @@ export default function YoutubePlayer(props) {
 
   const onPlay = () => {
     timeUpdate();
-    loopTimeUpdate();
+    startLoop();
   };
 
   const onPause = () => {
-    clearTimeUpdate();
+    stopLoop();
   };
 
   const onEnd = () => {
@@ -85,40 +94,121 @@ export default function YoutubePlayer(props) {
 
   const onError = (evt) => {
     if (evt.data !== 150) console.error(evt.data);
-    //dmca error
   };
 
-  const clearTimeUpdate = () => {
-    if (timeUpdateRef.current !== null) clearTimeout(timeUpdateRef.current);
-  };
+  useEffect(() => {
+    if (isTouchDevice) return;
+
+    const handleMouseMove = () => {
+      setShowControls(true);
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = setTimeout(() => {
+        if (playerRef.current.getPlayerState() === 1) {
+          setShowControls(false);
+        }
+      }, 3000);
+    };
+
+    const handleMouseLeave = () => {
+      setShowControls(false);
+    };
+
+    const container = playerContainerRef.current;
+    if (container) {
+      container.addEventListener('mousemove', handleMouseMove);
+      container.addEventListener('mouseleave', handleMouseLeave);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('mousemove', handleMouseMove);
+        container.removeEventListener('mouseleave', handleMouseLeave);
+      }
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+      stopLoop();
+    };
+  }, [isTouchDevice, playerRef, stopLoop]);
 
   const handleStateChange = (evt) => {
-    // event.data: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
     if (evt.data !== undefined) {
       setPlayerState(evt.data);
     }
+
+    if (evt.data === 1 && isTouchDevice) {
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = setTimeout(() => setShowControls(false), 3000);
+    }
+
+    if (evt.data === 2 && isTouchDevice) {
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+      setShowControls(true);
+    }
+  };
+
+  const toggleTheatreMode = () => {
+    setTheatreMode(!theatreMode);
   };
 
   return (
-    <Youtube
-      className="player"
-      opts={{
-        height: '100%',
+    <Box
+      ref={playerContainerRef}
+      sx={{
+        position: 'relative',
         width: '100%',
-        playerVars: {
-          autoplay: 1,
-          playsinline: 1,
-          rel: 0,
-          modestbranding: 1,
-          origin: origin || '',
-        },
+        height: '100%',
+        overflow: 'hidden',
       }}
-      onReady={onReady}
-      onPlay={onPlay}
-      onPause={onPause}
-      onEnd={onEnd}
-      onError={onError}
-      onStateChange={handleStateChange}
-    />
+    >
+      <Youtube
+        className="player"
+        opts={{
+          height: '100%',
+          width: '100%',
+          playerVars: {
+            autoplay: 1,
+            playsinline: 1,
+            rel: 0,
+            modestbranding: 1,
+            origin: origin || '',
+            controls: 1,
+            showinfo: 0,
+            iv_load_policy: 3,
+          },
+        }}
+        onReady={onReady}
+        onPlay={onPlay}
+        onPause={onPause}
+        onEnd={onEnd}
+        onError={onError}
+        onStateChange={handleStateChange}
+      />
+
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: showControls ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: showControls ? 'auto' : 'none',
+        }}
+      >
+        <Tooltip title={theatreMode ? 'Exit Theatre Mode' : 'Theatre Mode'}>
+          <IconButton onClick={toggleTheatreMode} color="inherit" sx={{ height: 32, width: 32 }}>
+            {theatreMode ? <WidthNormalIcon fontSize="small" /> : <WidthFullIcon fontSize="small" />}
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={`Copy Current Timestamp`}>
+          <IconButton onClick={copyTimestamp} color="inherit" aria-label="Copy Current Timestamp" rel="noopener noreferrer" target="_blank">
+            <ContentCopyIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
   );
 }

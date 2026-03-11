@@ -1,33 +1,34 @@
 import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VodChapters from './VodChapters';
 import CustomWidthTooltip from '../utils/CustomToolTip';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { toHMS } from '../utils/helpers';
 import YoutubePlayer from './YoutubePlayer';
 import CustomPlayer from './CustomPlayer';
 import { saveResumePosition } from '../utils/positionStorage';
-import ExpandMore from '../utils/ExpandMore';
+import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
 
 export default function BaseVod(props) {
-  const { origin, isYoutubeVod, youtube, handlePartChange, playerRef, part, setPart, vod, type, setDelay, timestamp, setTimestamp, setPlayerState, games, isPortrait, cdnBase } = props;
+  const { origin, isYoutubeVod, youtube, handlePartChange, playerRef, part, setPart, vod, type, setDelay, timestamp, setTimestamp, setPlayerState, games, cdnBase } = props;
   const [chapter, setChapter] = useState(undefined);
-  const [showMenu, setShowMenu] = useState(true);
   const [currentTime, setCurrentTime] = useState(undefined);
+  const [playerSettings, setPlayerSettings] = useState(() => loadPlayerSettings());
+  const [theatreMode, setTheatreMode] = useState(false);
 
   useEffect(() => {
     if (!vod) return;
     setChapter(vod.chapters.length > 0 ? vod.chapters[0] : null);
   }, [vod]);
+
+  useEffect(() => {
+    savePlayerSettings(playerSettings);
+  }, [playerSettings]);
 
   useEffect(() => {
     if (!playerRef.current || !vod?.chapters?.length || currentTime === undefined) return;
@@ -44,10 +45,6 @@ export default function BaseVod(props) {
     const prefix = currentGame ? 'game_' : 'vod_';
     saveResumePosition(saveId, currentTime, prefix);
   }, [currentTime, vod, playerRef, games, part]);
-
-  const handleExpandClick = () => {
-    setShowMenu(!showMenu);
-  };
 
   const copyTimestamp = () => {
     navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?t=${toHMS(currentTime)}`);
@@ -72,26 +69,60 @@ export default function BaseVod(props) {
           position: 'relative',
           width: '100%',
           aspectRatio: '16 / 9',
-          flex: isPortrait ? '1 1 auto' : '1 1 auto',
+          flex: '1 1 auto',
           minHeight: 0,
         }}
       >
         {isYoutubeVod ? (
-          <YoutubePlayer playerRef={playerRef} part={part} youtube={youtube} setCurrentTime={setCurrentTime} setPart={setPart} setPlayerState={setPlayerState} origin={origin} />
+          <YoutubePlayer
+            playerRef={playerRef}
+            part={part}
+            youtube={youtube}
+            setCurrentTime={setCurrentTime}
+            setPart={setPart}
+            setPlayerState={setPlayerState}
+            origin={origin}
+            defaultVolume={playerSettings.volume}
+            defaultMuted={playerSettings.muted}
+            theatreMode={theatreMode}
+            setTheatreMode={setTheatreMode}
+            copyTimestamp={copyTimestamp}
+          />
         ) : games ? (
-          <YoutubePlayer playerRef={playerRef} part={part} games={games} setPart={setPart} setPlayerState={setPlayerState} setCurrentTime={setCurrentTime} origin={origin} />
+          <YoutubePlayer
+            playerRef={playerRef}
+            part={part}
+            games={games}
+            setPart={setPart}
+            setPlayerState={setPlayerState}
+            setCurrentTime={setCurrentTime}
+            origin={origin}
+            defaultVolume={playerSettings.volume}
+            defaultMuted={playerSettings.muted}
+            theatreMode={theatreMode}
+            setTheatreMode={setTheatreMode}
+            copyTimestamp={copyTimestamp}
+          />
         ) : (
-          <CustomPlayer playerRef={playerRef} setCurrentTime={setCurrentTime} setDelay={setDelay} type={type} vod={vod} timestamp={timestamp} setPlayerState={setPlayerState} cdnBase={cdnBase} />
+          <CustomPlayer
+            playerRef={playerRef}
+            setCurrentTime={setCurrentTime}
+            setDelay={setDelay}
+            type={type}
+            vod={vod}
+            timestamp={timestamp}
+            setPlayerState={setPlayerState}
+            cdnBase={cdnBase}
+            defaultVolume={playerSettings.volume}
+            defaultMuted={playerSettings.muted}
+            onUpdateSettings={(settings) => setPlayerSettings(settings)}
+            theatreMode={theatreMode}
+            setTheatreMode={setTheatreMode}
+            copyTimestamp={copyTimestamp}
+          />
         )}
       </Box>
-      <Box sx={{ position: 'absolute', bottom: 0, left: '50%' }}>
-        <Tooltip title={showMenu ? 'Collapse' : 'Expand'}>
-          <ExpandMore expand={showMenu} onClick={handleExpandClick} aria-expanded={showMenu} aria-label="show menu">
-            <ExpandMoreIcon />
-          </ExpandMore>
-        </Tooltip>
-      </Box>
-      <Collapse in={showMenu} timeout="auto" unmountOnExit sx={{ minHeight: 'auto !important', width: '100%' }}>
+      <Collapse in={!theatreMode} timeout="auto" unmountOnExit sx={{ minHeight: 'auto !important', width: '100%' }}>
         <Box sx={{ display: 'flex', p: 1, alignItems: 'center' }}>
           {chapter && !games && (
             <VodChapters chapters={vod.chapters} chapter={chapter} setChapter={setChapter} setTimestamp={setTimestamp} setPart={setPart} youtube={youtube} isYoutubeVod={isYoutubeVod} />
@@ -140,13 +171,6 @@ export default function BaseVod(props) {
                 </Box>
               </Box>
             )}
-            <Box sx={{ ml: 0.5 }}>
-              <Tooltip title={`Copy Current Timestamp`}>
-                <IconButton onClick={copyTimestamp} color="primary" aria-label="Copy Current Timestamp" rel="noopener noreferrer" target="_blank">
-                  <ContentCopyIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
           </Box>
         </Box>
       </Collapse>

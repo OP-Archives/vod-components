@@ -76,3 +76,19 @@ export const getImage = (link, width = 40, height = 53) => {
   if (!link) return 'https://static-cdn.jtvnw.net/ttv-static/404_boxart.jpg';
   return link.replace('{width}x{height}', `${width}x${height}`);
 };
+
+export const formatTime = (time) => {
+  const isTimeNaN = isNaN(time);
+  const hours = !isTimeNaN ? Math.floor(time / 3600) : 0,
+    remainder = !isTimeNaN ? time % 3600 : 0,
+    minutes = !isTimeNaN ? Math.floor(remainder / 60) : 0,
+    seconds = !isTimeNaN ? Math.floor(remainder % 60) : 0;
+
+  let hh, mm, ss;
+  if (hours !== 0) hh = hours.toString().padStart(2, '0');
+
+  mm = minutes.toString().padStart(2, '0');
+  ss = seconds.toString().padStart(2, '0');
+
+  return `${hh ? `${hh}:` : ''}${mm}:${ss}`;
+};

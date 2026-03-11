@@ -63,24 +63,23 @@ export default function YoutubeVod(props) {
     if (!youtube || !vodId) return;
 
     const search = new URLSearchParams(location.search);
-    const timestampParam = search.get('t');
-    let timestamp = timestampParam !== null ? convertTimestamp(timestampParam) : 0;
-    const partParam = search.get('part');
-    let tmpPart = partParam !== null ? parseInt(partParam) : 1;
-    if (timestamp > 0) {
-      for (const data of youtube) {
-        if (data.duration > timestamp) {
-          tmpPart = data.part ?? youtube.indexOf(data) + 1;
-          break;
-        }
-        timestamp -= data.duration;
-      }
-    } else {
+    const timestampQuery = search.get('t');
+    let timestamp = timestampQuery !== null ? convertTimestamp(timestampQuery) : 0;
+    const partQuery = search.get('part');
+    let tmpPart = partQuery !== null ? parseInt(partQuery) : 1;
+    if (timestamp === 0) {
       const savedPosition = getResumePosition(vodId);
       if (savedPosition !== null && savedPosition > 0) {
         console.info(`Resuming Playback from ${savedPosition}`);
         timestamp = savedPosition;
       }
+    }
+    for (const data of youtube) {
+      if (data.duration > timestamp) {
+        tmpPart = data.part ?? youtube.indexOf(data) + 1;
+        break;
+      }
+      timestamp -= data.duration;
     }
     setPart({ part: tmpPart, timestamp });
     return;
@@ -104,17 +103,25 @@ export default function YoutubeVod(props) {
 
   // Handle Resume Positions depending on player state.
   useEffect(() => {
-    if (playerState === -1 || !vodId || !playerRef.current) return;
+    if (playerState === -1 || !vodId || !playerRef.current || !youtube || !part) return;
 
     switch (playerState) {
       // Player States: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
       case 0:
-        // Clear Resume Position when video has ended.
-        clearResumePosition(vodId, 'vod_');
+        // Clear Resume Position only when the last part has ended
+        if (part.part === youtube.length) {
+          clearResumePosition(vodId, 'vod_');
+        }
         break;
       case 2:
-        const currentTime = playerRef.current?.getCurrentTime();
+        let currentTime = playerRef.current?.getCurrentTime();
         if (currentTime !== null && currentTime > 0) {
+          if (youtube) {
+            for (let video of youtube) {
+              if (video.part >= part.part) break;
+              currentTime += video.duration;
+            }
+          }
           saveResumePosition(vodId, currentTime, 'vod_');
         }
         break;
@@ -122,7 +129,7 @@ export default function YoutubeVod(props) {
         break;
     }
     return;
-  }, [playerState, vodId, playerRef]);
+  }, [playerState, vodId, playerRef, youtube, part]);
 
   const handlePartChange = (evt) => {
     const tmpPart = evt.target.value + 1;
@@ -141,7 +148,7 @@ export default function YoutubeVod(props) {
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
-        <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%' }}>
+        <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%', minWidth: 0 }}>
           <BaseVod
             {...props}
             logo={logo}

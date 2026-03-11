@@ -18,13 +18,12 @@ CustomVod.propTypes = {
 };
 
 export default function CustomVod(props) {
-  const { archiveApiBase, channel, logo } = props;
+  const { archiveApiBase, channel, logo, cdnBase } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
   const [vod, setVod] = useState(undefined);
-  const search = new URLSearchParams(location.search);
-  const [timestamp, setTimestamp] = useState(search.get('t') !== null ? convertTimestamp(search.get('t')) : 0);
+  const [timestamp, setTimestamp] = useState(undefined);
   const [delay, setDelay] = useState(0);
   const [userChatDelay, setUserChatDelay] = useState(0);
   const [playerState, setPlayerState] = useState(-1);
@@ -63,12 +62,19 @@ export default function CustomVod(props) {
   useEffect(() => {
     if (!vodId) return;
 
-    const savedPosition = getResumePosition(vodId);
-    if (savedPosition !== null && savedPosition > 0) {
-      console.info(`Resuming Playback from ${savedPosition}`);
-      setTimestamp(savedPosition);
+    const search = new URLSearchParams(location.search);
+    const timestampQuery = search.get('t');
+    const timestampValue = timestampQuery !== null ? convertTimestamp(timestampQuery) : 0;
+    if (timestampValue > 0) {
+      setTimestamp(timestampValue);
+    } else {
+      const savedPosition = getResumePosition(vodId);
+      if (savedPosition !== null && savedPosition > 0) {
+        console.info(`Resuming Playback from ${savedPosition}`);
+        setTimestamp(savedPosition);
+      }
     }
-  }, [vodId]);
+  }, [vodId, location.search]);
 
   // Handle Resume Positions depending on player state.
   useEffect(() => {
@@ -82,7 +88,7 @@ export default function CustomVod(props) {
         break;
       case 2:
         // Save Resume Position when video has paused.
-        const currentTime = playerRef.current.currentTime();
+        const currentTime = playerRef.current.currentTime;
         if (currentTime !== null && currentTime > 0) saveResumePosition(vodId, currentTime, 'vod_');
         break;
       default:
@@ -96,7 +102,7 @@ export default function CustomVod(props) {
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
-        <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%' }}>
+        <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%', minWidth: 0 }}>
           <BaseVod {...props} logo={logo} playerRef={playerRef} vod={vod} timestamp={timestamp} setTimestamp={setTimestamp} setDelay={setDelay} setPlayerState={setPlayerState} cdnBase={cdnBase} />
         </Box>
         {isPortrait && <Divider />}

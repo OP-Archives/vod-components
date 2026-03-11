@@ -72,7 +72,7 @@ export default function Games(props) {
 
   // Handle Resume Positions depending on player state.
   useEffect(() => {
-    if (playerState === -1 || !vodId || !playerRef.current) return;
+    if (playerState === -1 || !playerRef.current) return;
 
     const currentGame = games?.[part.part - 1];
 
@@ -92,7 +92,7 @@ export default function Games(props) {
         break;
     }
     return;
-  }, [playerState, games, playerRef]);
+  }, [playerState, games, playerRef, part]);
 
   const handlePartChange = (evt) => {
     const tmpPart = evt.target.value + 1;
