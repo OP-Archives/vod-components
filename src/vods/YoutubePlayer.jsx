@@ -57,11 +57,15 @@ export default function YoutubePlayer(props) {
     const player = evt.target;
     playerRef.current = player;
 
+    canAutoPlay.video().then(({ result }) => {
+      if (!result) playerRef.current.mute();
+    });
+
     if (games) {
       playerRef.current.loadVideoById(games[part.part - 1].video_id, part.timestamp);
     } else {
       const index = youtube.findIndex((data) => data.part === part.part);
-      player.loadVideoById(youtube[index !== -1 ? index : 0].id, part.timestamp);
+      playerRef.current.loadVideoById(youtube[index !== -1 ? index : 0].id, part.timestamp);
     }
   };
 
