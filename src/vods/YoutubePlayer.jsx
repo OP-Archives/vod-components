@@ -8,6 +8,7 @@ import WidthNormalIcon from '@mui/icons-material/WidthNormal';
 import { getResumePosition } from '../utils/positionStorage';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import canAutoplay from 'can-autoplay';
 
 export default function YoutubePlayer(props) {
   const { youtube, playerRef, part, setPart, setCurrentTime, setPlayerState, games, origin, setTheatreMode, theatreMode, copyTimestamp } = props;
@@ -57,7 +58,7 @@ export default function YoutubePlayer(props) {
     const player = evt.target;
     playerRef.current = player;
 
-    canAutoPlay.video().then(({ result }) => {
+    canAutoplay.video().then(({ result }) => {
       if (!result) playerRef.current.mute();
     });
 
@@ -100,45 +101,26 @@ export default function YoutubePlayer(props) {
     if (evt.data !== 150) console.error(evt.data);
   };
 
-  useEffect(() => {
-    if (isTouchDevice) return;
-
-    const handleMouseMove = () => {
-      setShowControls(true);
-      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
-      autoHideTimerRef.current = setTimeout(() => {
-        if (playerRef.current.getPlayerState() === 1) {
-          setShowControls(false);
-        }
-      }, 3000);
-    };
-
-    const handleMouseLeave = () => {
-      setShowControls(false);
-    };
-
-    const container = playerContainerRef.current;
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove);
-      container.addEventListener('mouseleave', handleMouseLeave);
-    }
-
-    return () => {
-      if (container) {
-        container.removeEventListener('mousemove', handleMouseMove);
-        container.removeEventListener('mouseleave', handleMouseLeave);
+  const handlePointerMove = () => {
+    setShowControls(true);
+    if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+    autoHideTimerRef.current = setTimeout(() => {
+      if (playerRef.current?.getPlayerState() === 1) {
+        setShowControls(false);
       }
-      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
-      stopLoop();
-    };
-  }, [isTouchDevice, playerRef, stopLoop]);
+    }, 3000);
+  };
+
+  const handlePointerLeave = () => {
+    setShowControls(false);
+  };
 
   const handleStateChange = (evt) => {
     if (evt.data !== undefined) {
       setPlayerState(evt.data);
     }
 
-    if (evt.data === 1 && isTouchDevice) {
+    if (evt.data === 1) {
       if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
       autoHideTimerRef.current = setTimeout(() => setShowControls(false), 3000);
     }
@@ -156,6 +138,8 @@ export default function YoutubePlayer(props) {
   return (
     <Box
       ref={playerContainerRef}
+      onPointerMove={isTouchDevice ? undefined : handlePointerMove}
+      onPointerLeave={isTouchDevice ? undefined : handlePointerLeave}
       sx={{
         position: 'relative',
         width: '100%',
@@ -187,13 +171,25 @@ export default function YoutubePlayer(props) {
         onStateChange={handleStateChange}
       />
 
+      {!isTouchDevice && !showControls && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 1,
+            pointerEvents: 'auto',
+            background: 'transparent',
+          }}
+        />
+      )}
+
       <Box
         sx={{
           position: 'absolute',
           bottom: 0,
           left: '50%',
           transform: 'translateX(-50%)',
-          zIndex: 9999,
+          zIndex: 2,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
