@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import Tooltip from '@mui/material/Tooltip';
 import Divider from '@mui/material/Divider';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import Twemoji from 'react-twemoji';
+import { Twemoji, testEmoji } from './Chat/Twemoji';
 import { toHHMMSS } from '../utils/helpers';
 import ChatHeader from './Chat/ChatHeader';
 import ChatMessages from './Chat/ChatMessages';
@@ -463,11 +463,16 @@ export default function Chat(props) {
             } else {
               lastNormalEmote = null;
               lastNormalEmoteIndex = -1;
-              textFragments.push(
-                <Twemoji key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`} noWrapper options={{ className: 'twemoji' }}>
-                  <Typography variant="body1" display="inline">{`${word} `}</Typography>
-                </Twemoji>
-              );
+              if (testEmoji(word)) {
+                console.info(`Parsed ${word} for twemoji`);
+                textFragments.push(
+                  <Twemoji key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`} options={{ className: 'twemoji' }}>
+                    <Typography variant="body1" display="inline">{`${word} `}</Typography>
+                  </Twemoji>
+                );
+              } else {
+                textFragments.push(<Typography key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`} variant="body1" display="inline">{`${word} `}</Typography>);
+              }
             }
           }
         }

@@ -30,10 +30,8 @@ export default defineConfig({
           '@mui/system',
           '@emotion/react',
           '@emotion/styled',
-          'video.js',
           'simplebar-react',
           'react-router-dom',
-          'react-twemoji',
           'prop-types',
         ];
         return externals.some((pkg) => id === pkg || id.startsWith(pkg + '/'));

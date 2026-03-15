@@ -58,10 +58,10 @@
     "humanize-duration": "^3.33.2",
     "prop-types": "^15.8.1",
     "react-router-dom": "^7.13.1",
-    "react-twemoji": "^0.7.2",
     "react-youtube": "^10.1.0",
     "simplebar-react": "^3.3.2",
-    "tinyduration": "^3.4.1"
+    "tinyduration": "^3.4.1",
+    "twemoji": "^14.0.2"
   },
   "peerDependencies": {
     "@mui/icons-material": "^5.0.0 || ^6.0.0 || ^7.0.0",
