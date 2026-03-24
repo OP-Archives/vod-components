@@ -464,7 +464,6 @@ export default function Chat(props) {
               lastNormalEmote = null;
               lastNormalEmoteIndex = -1;
               if (testEmoji(word)) {
-                console.info(`Parsed ${word} for twemoji`);
                 textFragments.push(
                   <Twemoji key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`} options={{ className: 'twemoji' }}>
                     <Typography variant="body1" display="inline">{`${word} `}</Typography>
