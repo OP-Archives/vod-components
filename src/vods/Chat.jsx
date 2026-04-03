@@ -39,18 +39,13 @@ let cachedBadges = new Map();
 // Pixels of tolerance before considering user scrolled up from bottom
 const SCROLL_TOLERANCE = 350;
 
-const sanitizeEmoteData = (emote) => {
-  const safeName = (emote.name || emote.code || '').replace(/[^a-zA-Z0-9_@.-]/g, '');
-  return { ...emote, name: safeName };
-};
-
 export default function Chat(props) {
   const { isPortrait, vodId, playerRef, userChatDelay, delay, youtube, part, games, isYoutubeVod, playerState, setUserChatDelay, twitchId, archiveApiBase } = props;
 
   // State management
   const [showChat, setShowChat] = useState(true);
   const [shownMessages, setShownMessages] = useState([]);
-  const [emotes, setEmotes] = useState({ ffz_emotes: [], bttv_emotes: [], '7tv_emotes': [] });
+  const [emotes, setEmotes] = useState({ ffz_emotes: [], bttv_emotes: [], seventv_emotes: [] });
   const [scrolling, setScrolling] = useState(false);
   const [showTimestamp, setShowTimestamp] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -134,12 +129,11 @@ export default function Chat(props) {
             fallbackLoadEmotes();
             return;
           }
-          const sanitized = {
-            ffz_emotes: (response.data[0].ffz_emotes || []).map(sanitizeEmoteData),
-            bttv_emotes: (response.data[0].bttv_emotes || []).map(sanitizeEmoteData),
-            '7tv_emotes': (response.data[0]['7tv_emotes'] || []).map(sanitizeEmoteData),
-          };
-          setEmotes(sanitized);
+          setEmotes({
+            ffz_emotes: response.data[0].ffz_emotes || [],
+            bttv_emotes: response.data[0].bttv_emotes || [],
+            seventv_emotes: response.data[0]['7tv_emotes'] || response.data[0]['seventv_emotes'] || [],
+          });
         })
         .catch((e) => {
           console.error(e);
@@ -158,8 +152,7 @@ export default function Chat(props) {
         .then((response) => response.json())
         .then((data) => {
           if (data.status >= 400) return;
-          const sanitizedData = (data || []).map(sanitizeEmoteData);
-          setEmotes((emotes) => ({ ...emotes, bttv_emotes: emotes.bttv_emotes.concat(sanitizedData) }));
+          setEmotes((emotes) => ({ ...emotes, bttv_emotes: emotes.bttv_emotes.concat(data || []) }));
         })
         .catch((e) => {
           console.error(e);
@@ -173,8 +166,7 @@ export default function Chat(props) {
         .then((response) => response.json())
         .then((data) => {
           if (data.status >= 400) return;
-          const sanitizedData = (data.sharedEmotes || []).concat(data.channelEmotes || []).map(sanitizeEmoteData);
-          setEmotes((emotes) => ({ ...emotes, bttv_emotes: emotes.bttv_emotes.concat(sanitizedData) }));
+          setEmotes((emotes) => ({ ...emotes, bttv_emotes: emotes.bttv_emotes.concat((data.sharedEmotes || []).concat(data.channelEmotes || [])) }));
         })
         .catch((e) => {
           console.error(e);
@@ -189,8 +181,7 @@ export default function Chat(props) {
         .then((data) => {
           if (data.status >= 400) return;
           const emoticons = data.sets?.[data.room?.set]?.emoticons || [];
-          const sanitizedData = emoticons.map(sanitizeEmoteData);
-          setEmotes((emotes) => ({ ...emotes, ffz_emotes: sanitizedData }));
+          setEmotes((emotes) => ({ ...emotes, ffz_emotes: emoticons }));
         })
         .catch((e) => {
           console.error(e);
@@ -204,8 +195,7 @@ export default function Chat(props) {
         .then((response) => response.json())
         .then((data) => {
           if (data.status_code >= 400) return;
-          const sanitizedData = (data.emote_set?.emotes || []).map(sanitizeEmoteData);
-          setEmotes((emotes) => ({ ...emotes, '7tv_emotes': sanitizedData }));
+          setEmotes((emotes) => ({ ...emotes, seventv_emotes: data.emote_set?.emotes || [] }));
         })
         .catch((e) => {
           console.error(e);
@@ -221,8 +211,7 @@ export default function Chat(props) {
       })
         .then((response) => response.json())
         .then((data) => {
-          const sanitizedData = (data.emotes || []).map(sanitizeEmoteData);
-          setEmotes((emotes) => ({ ...emotes, '7tv_emotes': emotes['7tv_emotes'].concat(sanitizedData) }));
+          setEmotes((emotes) => ({ ...emotes, seventv_emotes: emotes[seventv_emotes].concat(data.emotes || []) }));
         })
         .catch((e) => {
           console.error(e);
@@ -237,12 +226,12 @@ export default function Chat(props) {
   const emoteLookup = useMemo(() => {
     if (!emotes) return;
     const lookup = new Map();
-    const { ffz_emotes, bttv_emotes, '7tv_emotes': sevenTVEmotes } = emotes;
+    const { ffz_emotes, bttv_emotes, seventv_emotes } = emotes;
 
     // Build lookup for all emotes (O(1) lookups)
     ffz_emotes.forEach((emote) => lookup.set(emote.code || emote.name, { ...emote, provider: 'FFZ' }));
     bttv_emotes.forEach((emote) => lookup.set(emote.code || emote.name, { ...emote, provider: 'BTTV' }));
-    sevenTVEmotes.forEach((emote) => lookup.set(emote.code || emote.name, { ...emote, provider: '7TV' }));
+    seventv_emotes.forEach((emote) => lookup.set(emote.code || emote.name, { ...emote, provider: '7TV' }));
 
     return lookup;
   }, [emotes]);
