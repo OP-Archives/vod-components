@@ -118,7 +118,9 @@ export default function Games(props) {
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
-        <BaseVod {...props} logo={logo} handlePartChange={handlePartChange} games={games} playerRef={playerRef} part={part} setPart={setPart} vod={vod} setPlayerState={setPlayerState} />
+        <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%', minWidth: 0 }}>
+          <BaseVod {...props} logo={logo} handlePartChange={handlePartChange} games={games} playerRef={playerRef} part={part} setPart={setPart} vod={vod} setPlayerState={setPlayerState} />
+        </Box>
         {isPortrait && <Divider />}
         <Chat
           archiveApiBase={archiveApiBase}

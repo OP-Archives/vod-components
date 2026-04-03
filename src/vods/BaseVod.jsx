@@ -131,8 +131,8 @@ export default function BaseVod(props) {
             <Typography fontWeight={550} variant="body1" noWrap={true}>{`${vod.title}`}</Typography>
           </CustomWidthTooltip>
           <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-            {isYoutubeVod && (
-              <Box sx={{ ml: 0.5 }}>
+            <Box sx={{ ml: 0.5 }}>
+              {isYoutubeVod && (
                 <FormControl variant="outlined">
                   <InputLabel id="select-label">Part</InputLabel>
                   <Select labelId="select-label" label="Part" value={part.part - 1} onChange={handlePartChange} autoWidth>
@@ -145,32 +145,22 @@ export default function BaseVod(props) {
                     })}
                   </Select>
                 </FormControl>
-              </Box>
-            )}
-            {games && (
-              <Box
-                sx={{
-                  marginLeft: 'auto',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Box sx={{ ml: 0.5 }}>
-                  <FormControl variant="outlined">
-                    <InputLabel id="select-label">Game</InputLabel>
-                    <Select labelId="select-label" label="Game" value={part.part - 1} onChange={handlePartChange} autoWidth>
-                      {games.map((data, i) => {
-                        return (
-                          <MenuItem key={data.id} value={i}>
-                            {data.game_name}
-                          </MenuItem>
-                        );
-                      })}
-                    </Select>
-                  </FormControl>
-                </Box>
-              </Box>
-            )}
+              )}
+              {games && (
+                <FormControl variant="outlined">
+                  <InputLabel id="select-label">Game</InputLabel>
+                  <Select labelId="select-label" label="Game" value={part.part - 1} onChange={handlePartChange} autoWidth>
+                    {games.map((data, i) => {
+                      return (
+                        <MenuItem key={data.id} value={i}>
+                          {data.game_name}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
           </Box>
         </Box>
       </Collapse>
