@@ -1,6 +1,6 @@
 {
   "name": "@op-archives/vod-components",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "description": "Shared VOD player components for OP-Archives streamer sites",
   "type": "module",
   "main": "./dist/index.es.js",
