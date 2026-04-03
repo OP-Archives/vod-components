@@ -132,7 +132,7 @@ export default function Chat(props) {
           setEmotes({
             ffz_emotes: response.data[0].ffz_emotes || [],
             bttv_emotes: response.data[0].bttv_emotes || [],
-            seventv_emotes: response.data[0]['7tv_emotes'] || response.data[0]['seventv_emotes'] || [],
+            seventv_emotes: response.data[0]['7tv_emotes'] || response.data[0]?.seventv_emotes || [],
           });
         })
         .catch((e) => {
@@ -211,7 +211,7 @@ export default function Chat(props) {
       })
         .then((response) => response.json())
         .then((data) => {
-          setEmotes((emotes) => ({ ...emotes, seventv_emotes: emotes[seventv_emotes].concat(data.emotes || []) }));
+          setEmotes((emotes) => ({ ...emotes, seventv_emotes: emotes.seventv_emotes.concat(data.emotes || []) }));
         })
         .catch((e) => {
           console.error(e);
