@@ -11,7 +11,7 @@ export function Twemoji({ children, options = {} }) {
         ...options,
       });
     }
-  }, [children]);
+  }, [children, options]);
   return <span ref={ref}>{children}</span>;
 }
 

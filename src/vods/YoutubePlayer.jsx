@@ -11,7 +11,19 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import canAutoplay from 'can-autoplay';
 
 export default function YoutubePlayer(props) {
-  const { youtube, playerRef, part, setPart, setCurrentTime, setPlayerState, games, origin, setTheatreMode, theatreMode, copyTimestamp } = props;
+  const {
+    youtube,
+    playerRef,
+    part,
+    setPart,
+    setCurrentTime,
+    setPlayerState,
+    games,
+    origin,
+    setTheatreMode,
+    theatreMode,
+    copyTimestamp,
+  } = props;
   const timeIntervalRef = useRef(null);
   const [showControls, setShowControls] = useState(true);
   const playerContainerRef = useRef(null);
@@ -205,7 +217,13 @@ export default function YoutubePlayer(props) {
         </Tooltip>
         {!games && (
           <Tooltip title={`Copy Current Timestamp`}>
-            <IconButton onClick={copyTimestamp} color="inherit" aria-label="Copy Current Timestamp" rel="noopener noreferrer" target="_blank">
+            <IconButton
+              onClick={copyTimestamp}
+              color="inherit"
+              aria-label="Copy Current Timestamp"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
               <ContentCopyIcon fontSize="small" />
             </IconButton>
           </Tooltip>

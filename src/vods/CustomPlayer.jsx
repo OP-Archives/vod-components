@@ -26,7 +26,21 @@ const hlsConfig = {
 };
 
 export default function Player(props) {
-  const { setCurrentTime, type, vod, timestamp, setDelay, setPlayerState, cdnBase, defaultVolume, defaultMuted, theatreMode, setTheatreMode, copyTimestamp, playerRef } = props;
+  const {
+    setCurrentTime,
+    type,
+    vod,
+    timestamp,
+    setDelay,
+    setPlayerState,
+    cdnBase,
+    defaultVolume,
+    defaultMuted,
+    theatreMode,
+    setTheatreMode,
+    copyTimestamp,
+    playerRef,
+  } = props;
   const hlsInstance = useRef(null);
   const playerContainerRef = useRef(null);
   const timeIntervalRef = useRef(null);
@@ -345,7 +359,15 @@ export default function Player(props) {
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       {type === 'manual' && !source && (
-        <Paper sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexDirection: 'column' }}>
+        <Paper
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+            flexDirection: 'column',
+          }}
+        >
           {fileError && <Alert severity="error">{fileError}</Alert>}
           <Box sx={{ mt: 1 }}>
             <Button variant="contained" component="label">

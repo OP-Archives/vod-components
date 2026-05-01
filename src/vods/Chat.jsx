@@ -37,10 +37,24 @@ const BASE_7TV_EMOTE_API = 'https://7tv.io/v3';
 let cachedBadges = new Map();
 
 // Pixels of tolerance before considering user scrolled up from bottom
-const SCROLL_TOLERANCE = 350;
+const SCROLL_TOLERANCE = 50;
 
 export default function Chat(props) {
-  const { isPortrait, vodId, playerRef, userChatDelay, delay, youtube, part, games, isYoutubeVod, playerState, setUserChatDelay, twitchId, archiveApiBase } = props;
+  const {
+    isPortrait,
+    vodId,
+    playerRef,
+    userChatDelay,
+    delay,
+    youtube,
+    part,
+    games,
+    isYoutubeVod,
+    playerState,
+    setUserChatDelay,
+    twitchId,
+    archiveApiBase,
+  } = props;
 
   // State management
   const [showChat, setShowChat] = useState(true);
@@ -76,9 +90,9 @@ export default function Chat(props) {
 
     updateChatWidth();
   }, []);
-  const isAtBottomRef = useRef(true);
 
   // Refs for various data and timers
+  const isAtBottomRef = useRef(true);
   const comments = useRef([]);
   const badges = useRef();
   const cursor = useRef();
@@ -88,6 +102,10 @@ export default function Chat(props) {
   const stoppedAtIndex = useRef(0);
   const newMessages = useRef();
   const fetchControllerRef = useRef(null);
+  const lastScrollHeight = useRef(0);
+  const isAutoScrolling = useRef(false);
+  const lastScrollTop = useRef(0);
+  const scrollingRef = useRef(scrolling);
 
   // === EFFECT HOOKS ===
   useEffect(() => {
@@ -166,7 +184,10 @@ export default function Chat(props) {
         .then((response) => response.json())
         .then((data) => {
           if (data.status >= 400) return;
-          setEmotes((emotes) => ({ ...emotes, bttv_emotes: emotes.bttv_emotes.concat((data.sharedEmotes || []).concat(data.channelEmotes || [])) }));
+          setEmotes((emotes) => ({
+            ...emotes,
+            bttv_emotes: emotes.bttv_emotes.concat((data.sharedEmotes || []).concat(data.channelEmotes || [])),
+          }));
         })
         .catch((e) => {
           console.error(e);
@@ -315,8 +336,11 @@ export default function Chat(props) {
                 src={getEmoteImageUrl(emote, emoteType, 2)}
                 alt={word}
               />
-              <Typography display="block" variant="caption">{`Emote: ${emote.name || emote.code}`}</Typography>
-              <Typography display="block" variant="caption">{`${emoteType} Emotes`}</Typography>
+              <Typography
+                sx={{ display: 'block' }}
+                variant="caption"
+              >{`Emote: ${emote.name || emote.code}`}</Typography>
+              <Typography sx={{ display: 'block' }} variant="caption">{`${emoteType} Emotes`}</Typography>
             </Box>
           }
         >
@@ -404,7 +428,11 @@ export default function Chat(props) {
         if (fragment.emote || fragment.emoticon) {
           const emoteID = fragment.emote ? fragment.emote.emoteID : fragment.emoticon.emoticon_id;
           textFragments.push(
-            renderEmoteTooltip({ id: emoteID, code: fragment.text, provider: 'Twitch' }, fragment.text, `${keyPrefix}-emote-${fragment.text}-${Math.random().toString(36).slice(2, 11)}`)
+            renderEmoteTooltip(
+              { id: emoteID, code: fragment.text, provider: 'Twitch' },
+              fragment.text,
+              `${keyPrefix}-emote-${fragment.text}-${Math.random().toString(36).slice(2, 11)}`
+            )
           );
         } else {
           const words = fragment.text.split(' ');
@@ -420,12 +448,19 @@ export default function Chat(props) {
                 // If Zero Width Emote
                 if (isZeroWidth && lastNormalEmote) {
                   // Create a container that holds both the normal emote and zero-width emote
-                  const zeroWidthEmote = renderZeroWidthEmote(emote, word, `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`);
+                  const zeroWidthEmote = renderZeroWidthEmote(
+                    emote,
+                    word,
+                    `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`
+                  );
 
                   // Create a wrapper that contains both emotes - zero-width emote first, then normal emote
                   // This ensures the zero-width emote is positioned correctly relative to the normal emote
                   const emoteContainer = (
-                    <Box key={`${keyPrefix}-emote-container-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`} sx={{ display: 'inline', position: 'relative', verticalAlign: 'middle' }}>
+                    <Box
+                      key={`${keyPrefix}-emote-container-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
+                      sx={{ display: 'inline', position: 'relative', verticalAlign: 'middle' }}
+                    >
                       {zeroWidthEmote}
                       {lastNormalEmote}
                     </Box>
@@ -438,13 +473,21 @@ export default function Chat(props) {
                   lastNormalEmote = null;
                   lastNormalEmoteIndex = -1;
                 } else {
-                  const normalEmote = renderEmoteTooltip(emote, word, `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`);
+                  const normalEmote = renderEmoteTooltip(
+                    emote,
+                    word,
+                    `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`
+                  );
                   lastNormalEmote = normalEmote;
                   lastNormalEmoteIndex = textFragments.length;
                   textFragments.push(normalEmote);
                 }
               } else {
-                const normalEmote = renderEmoteTooltip(emote, word, `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`);
+                const normalEmote = renderEmoteTooltip(
+                  emote,
+                  word,
+                  `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`
+                );
                 lastNormalEmote = normalEmote;
                 lastNormalEmoteIndex = textFragments.length;
                 textFragments.push(normalEmote);
@@ -454,12 +497,21 @@ export default function Chat(props) {
               lastNormalEmoteIndex = -1;
               if (testEmoji(word)) {
                 textFragments.push(
-                  <Twemoji key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`} options={{ className: 'twemoji' }}>
-                    <Typography variant="body1" display="inline">{`${word} `}</Typography>
+                  <Twemoji
+                    key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
+                    options={{ className: 'twemoji' }}
+                  >
+                    <Typography variant="body1" sx={{ display: 'inline' }}>{`${word} `}</Typography>
                   </Twemoji>
                 );
               } else {
-                textFragments.push(<Typography key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`} variant="body1" display="inline">{`${word} `}</Typography>);
+                textFragments.push(
+                  <Typography
+                    key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
+                    variant="body1"
+                    sx={{ display: 'inline' }}
+                  >{`${word} `}</Typography>
+                );
               }
             }
           }
@@ -472,7 +524,14 @@ export default function Chat(props) {
   );
 
   const buildComments = useCallback(() => {
-    if (!playerRef.current || !comments.current || comments.current.length === 0 || !cursor.current || stoppedAtIndex.current === null) return;
+    if (
+      !playerRef.current ||
+      !comments.current ||
+      comments.current.length === 0 ||
+      !cursor.current ||
+      stoppedAtIndex.current === null
+    )
+      return;
     if (!isPlaying()) return;
 
     const time = getCurrentTime();
@@ -548,7 +607,7 @@ export default function Chat(props) {
                     src={badgeVersion.image_url_4x}
                     alt=""
                   />
-                  <Typography display="block" variant="caption">{`${badgeId}`}</Typography>
+                  <Typography sx={{ display: 'block' }} variant="caption">{`${badgeId}`}</Typography>
                 </Box>
               }
             >
@@ -571,7 +630,8 @@ export default function Chat(props) {
           continue;
         }
 
-        const badge = channelBadges?.find((b) => b.set_id === badgeId) || globalBadges?.find((b) => b.set_id === badgeId);
+        const badge =
+          channelBadges?.find((b) => b.set_id === badgeId) || globalBadges?.find((b) => b.set_id === badgeId);
         if (!badge) continue;
 
         const badgeVersion = badge.versions.find((v) => v.id === version);
@@ -595,7 +655,7 @@ export default function Chat(props) {
                   src={badgeVersion.image_url_4x}
                   alt=""
                 />
-                <Typography display="block" variant="caption">{`${badgeId}`}</Typography>
+                <Typography sx={{ display: 'block' }} variant="caption">{`${badgeId}`}</Typography>
               </Box>
             }
           >
@@ -684,13 +744,85 @@ export default function Chat(props) {
       stoppedAtIndex.current = lastIndex;
       if (comments.current.length - 1 === lastIndex) fetchNextComments();
     }
-  }, [getCurrentTime, playerRef, vodId, showTimestamp, transformMessage, isPlaying, shouldFilterMessage, archiveApiBase]);
+  }, [
+    getCurrentTime,
+    playerRef,
+    vodId,
+    showTimestamp,
+    transformMessage,
+    isPlaying,
+    shouldFilterMessage,
+    archiveApiBase,
+  ]);
+
+  const scrollToBottom = () => {
+    if (!chatRef.current) return;
+
+    setScrolling(false);
+    scrollingRef.current = false;
+    isAtBottomRef.current = true;
+    isAutoScrolling.current = true;
+
+    const scrollToBottomSmooth = () => {
+      if (scrollingRef.current || !isAtBottomRef.current) {
+        isAutoScrolling.current = false;
+        return;
+      }
+
+      if (chatRef.current) {
+        chatRef.current.scrollTop = chatRef.current.scrollHeight;
+
+        setTimeout(() => {
+          isAutoScrolling.current = false;
+        }, 150);
+      }
+    };
+
+    const waitForImages = () => {
+      const chatContainer = chatRef.current;
+      if (!chatContainer) {
+        isAutoScrolling.current = false;
+        return;
+      }
+
+      const images = chatContainer.querySelectorAll('img');
+      if (images.length === 0) {
+        scrollToBottomSmooth();
+        return;
+      }
+
+      let loadedCount = 0;
+      const totalImages = images.length;
+
+      const checkIfDone = () => {
+        loadedCount++;
+        if (loadedCount >= totalImages) {
+          scrollToBottomSmooth();
+        }
+      };
+
+      images.forEach((img) => {
+        if (img.complete) {
+          checkIfDone();
+        } else {
+          img.onload = checkIfDone;
+          img.onerror = checkIfDone;
+        }
+      });
+
+      setTimeout(scrollToBottomSmooth, 500);
+    };
+
+    requestAnimationFrame(() => {
+      waitForImages();
+    });
+  };
 
   useEffect(() => {
-    if (!isAtBottomRef.current || shownMessages.length === 0) return;
+    if (scrolling || !isAtBottomRef.current || shownMessages.length === 0) return;
     // Auto-scroll to bottom if user is at the bottom
     scrollToBottom();
-  }, [shownMessages]);
+  }, [shownMessages, scrolling]);
 
   const loop = useCallback(() => {
     if (loopRef.current !== null) clearInterval(loopRef.current);
@@ -708,22 +840,41 @@ export default function Chat(props) {
   const handleScroll = useCallback(() => {
     if (!chatRef.current) return;
 
+    if (isAutoScrolling.current) {
+      lastScrollHeight.current = chatRef.current.scrollHeight;
+      lastScrollTop.current = chatRef.current.scrollTop;
+      return;
+    }
+
     const { scrollTop, scrollHeight, clientHeight } = chatRef.current;
 
-    // Check if user is at the bottom (within SCROLL_TOLERANCE tolerance)
-    const isAtBottom = Math.abs(scrollTop + clientHeight - scrollHeight) < SCROLL_TOLERANCE;
-
-    // Update ref to track scroll position
-    isAtBottomRef.current = isAtBottom;
-
-    // If user scrolls up, pause auto-scrolling
-    if (!isAtBottom) {
-      setScrolling(true);
-    } else {
-      // If user scrolls all the way down, resume auto-scrolling
-      setScrolling(false);
+    if (scrollHeight !== lastScrollHeight.current) {
+      lastScrollHeight.current = scrollHeight;
+      lastScrollTop.current = scrollTop;
+      return;
     }
+
+    const isScrollingUp = scrollTop < lastScrollTop.current;
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+    const isAtBottom = distanceFromBottom <= SCROLL_TOLERANCE;
+
+    if (isScrollingUp) {
+      isAtBottomRef.current = false;
+      setScrolling(true);
+      scrollingRef.current = true; // INSTANTLY engage the kill switch
+    } else if (isAtBottom) {
+      isAtBottomRef.current = true;
+      setScrolling(false);
+      scrollingRef.current = false; // Unlock
+    }
+
+    lastScrollHeight.current = scrollHeight;
+    lastScrollTop.current = scrollTop;
   }, []);
+
+  const stopLoop = () => {
+    if (loopRef.current !== null) clearInterval(loopRef.current);
+  };
 
   // === MAIN EFFECT HOOK ===
   useEffect(() => {
@@ -737,7 +888,12 @@ export default function Chat(props) {
       if (playerState === 1) {
         const time = getCurrentTime();
         // Only fetch comments if we don't have any or if we're seeking out of range
-        if (!comments.current || comments.current.length === 0 || time < comments.current[0].content_offset_seconds || time > comments.current[comments.current.length - 1].content_offset_seconds) {
+        if (
+          !comments.current ||
+          comments.current.length === 0 ||
+          time < comments.current[0].content_offset_seconds ||
+          time > comments.current[comments.current.length - 1].content_offset_seconds
+        ) {
           playRef.current = setTimeout(() => {
             stopLoop();
             stoppedAtIndex.current = 0;
@@ -802,58 +958,6 @@ export default function Chat(props) {
     };
   }, [vodId, playerRef, playerState, getCurrentTime, handleScroll, loop, isPlaying, archiveApiBase]);
 
-  const stopLoop = () => {
-    if (loopRef.current !== null) clearInterval(loopRef.current);
-  };
-
-  const scrollToBottom = () => {
-    if (!chatRef.current) return;
-    setScrolling(false);
-
-    const scrollToBottomSmooth = () => {
-      if (chatRef.current) {
-        chatRef.current.scrollTop = chatRef.current.scrollHeight;
-      }
-    };
-
-    const waitForImages = () => {
-      const chatContainer = chatRef.current;
-      if (!chatContainer) return;
-
-      const images = chatContainer.querySelectorAll('img');
-      if (images.length === 0) {
-        scrollToBottomSmooth();
-        return;
-      }
-
-      let loadedCount = 0;
-      const totalImages = images.length;
-
-      const checkIfDone = () => {
-        loadedCount++;
-        if (loadedCount >= totalImages) {
-          scrollToBottomSmooth();
-        }
-      };
-
-      images.forEach((img) => {
-        if (img.complete) {
-          checkIfDone();
-        } else {
-          img.onload = checkIfDone;
-          img.onerror = checkIfDone;
-        }
-      });
-
-      // Fallback timeout in case images don't fire events
-      setTimeout(scrollToBottomSmooth, 500);
-    };
-
-    requestAnimationFrame(() => {
-      waitForImages();
-    });
-  };
-
   // === RENDERING ===
   return (
     <Box
@@ -866,10 +970,22 @@ export default function Chat(props) {
     >
       {showChat && (
         <>
-          <ChatHeader isPortrait={isPortrait} showChat={showChat} setShowChat={setShowChat} setShowModal={setShowModal} />
+          <ChatHeader
+            isPortrait={isPortrait}
+            showChat={showChat}
+            setShowChat={setShowChat}
+            setShowModal={setShowModal}
+          />
           <Divider />
           <Box sx={{ height: '100%', width: isPortrait ? 'unset' : `${chatWidth}px`, minHeight: 0 }}>
-            <ChatMessages comments={comments.current} shownMessages={shownMessages} scrolling={scrolling} scrollToBottom={scrollToBottom} chatRef={chatRef} handleScroll={handleScroll} />
+            <ChatMessages
+              comments={comments.current}
+              shownMessages={shownMessages}
+              scrolling={scrolling}
+              scrollToBottom={scrollToBottom}
+              chatRef={chatRef}
+              handleScroll={handleScroll}
+            />
           </Box>
         </>
       )}

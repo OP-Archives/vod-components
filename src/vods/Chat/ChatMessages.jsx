@@ -8,7 +8,16 @@ export default function ChatMessages(props) {
 
   if (comments && comments.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
+          width: '100%',
+          flexDirection: 'column',
+        }}
+      >
         <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
           <CircularProgress sx={{ mt: 2 }} size="2rem" />
         </Box>
@@ -18,7 +27,10 @@ export default function ChatMessages(props) {
 
   return (
     <>
-      <SimpleBar scrollableNodeProps={{ ref: chatRef, onScroll: handleScroll }} style={{ height: '100%', overflowX: 'hidden' }}>
+      <SimpleBar
+        scrollableNodeProps={{ ref: chatRef, onScroll: handleScroll }}
+        style={{ height: '100%', overflowX: 'hidden' }}
+      >
         <Box
           sx={{
             display: 'flex',

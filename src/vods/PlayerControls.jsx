@@ -55,15 +55,20 @@ export default function PlayerControls(props) {
     const handleMouseMove = () => {
       setShowControls(true);
       if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
-      autoHideTimerRef.current = setTimeout(() => {
-        if (isPlaying) {
-          setShowControls(false);
-        }
-      }, AUTO_HIDE_DELAY);
+
+      // Only set the auto-hide timer if the menu is NOT open
+      if (!isMenuOpen) {
+        autoHideTimerRef.current = setTimeout(() => {
+          if (isPlaying) {
+            setShowControls(false);
+          }
+        }, AUTO_HIDE_DELAY);
+      }
     };
 
     const handleMouseLeave = () => {
-      if (isPlaying) {
+      // Don't hide the controls on mouse leave if the settings menu is open
+      if (isPlaying && !isMenuOpen) {
         setShowControls(false);
       }
     };
@@ -75,6 +80,18 @@ export default function PlayerControls(props) {
       playerContainer.addEventListener('click', handleMouseMove);
     }
 
+    // Force controls to stay visible when menu is open,
+    // and restart the auto-hide timer automatically when it closes.
+    if (isMenuOpen) {
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+      setShowControls(true);
+    } else if (isPlaying) {
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, AUTO_HIDE_DELAY);
+    }
+
     return () => {
       if (playerContainer) {
         playerContainer.removeEventListener('mousemove', handleMouseMove);
@@ -83,7 +100,7 @@ export default function PlayerControls(props) {
       }
       if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
     };
-  }, [isPlaying, playerContainerRef]);
+  }, [isPlaying, isMenuOpen, playerContainerRef]);
 
   useEffect(() => {
     return () => {
@@ -95,24 +112,23 @@ export default function PlayerControls(props) {
     if (onCopyTimestamp) {
       onCopyTimestamp(currentTime);
     }
-    setIsMenuOpen(false);
-    setSettingsAnchorEl(null);
-    setShowSpeedMenu(false);
+    handleCloseSettings(); // Use the new unified close function
   };
 
   const handlePlaybackSpeedChange = (speed) => {
     if (onPlaybackSpeedChange) {
       onPlaybackSpeedChange(speed);
     }
-    setIsMenuOpen(false);
-    setSettingsAnchorEl(null);
-    setShowSpeedMenu(false);
+    handleCloseSettings();
   };
 
   const handleCloseSettings = () => {
     setIsMenuOpen(false);
-    setSettingsAnchorEl(null);
-    setShowSpeedMenu(false);
+
+    setTimeout(() => {
+      setSettingsAnchorEl(null);
+      setShowSpeedMenu(false);
+    }, 250);
   };
 
   return (
@@ -157,15 +173,25 @@ export default function PlayerControls(props) {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.25, md: 0.75 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.25, md: 0.75 }, minWidth: { xs: 70, md: 90 } }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.25, md: 0.75 }, minWidth: { xs: 70, md: 90 } }}
+          >
             <Tooltip title={isPlaying ? 'Pause' : 'Play'}>
-              <IconButton onClick={onTogglePlayPause} color="inherit" sx={{ height: { xs: 28, md: 32 }, width: { xs: 28, md: 32 } }}>
+              <IconButton
+                onClick={onTogglePlayPause}
+                color="inherit"
+                sx={{ height: { xs: 28, md: 32 }, width: { xs: 28, md: 32 } }}
+              >
                 {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
               </IconButton>
             </Tooltip>
 
             <Tooltip title={isMuted ? 'Unmute' : 'Mute'}>
-              <IconButton onClick={onToggleMute} color="inherit" sx={{ height: { xs: 28, md: 32 }, width: { xs: 28, md: 32 } }}>
+              <IconButton
+                onClick={onToggleMute}
+                color="inherit"
+                sx={{ height: { xs: 28, md: 32 }, width: { xs: 28, md: 32 } }}
+              >
                 {isMuted || volume === 0 ? <VolumeOffIcon /> : <VolumeUpIcon />}
               </IconButton>
             </Tooltip>
@@ -190,7 +216,15 @@ export default function PlayerControls(props) {
             />
           </Box>
 
-          <Typography variant="body2" sx={{ minWidth: { xs: 50, md: 65 }, fontSize: { xs: '11px', md: '12px' }, flexShrink: 0, display: { xs: 'none', md: 'block' } }}>
+          <Typography
+            variant="body2"
+            sx={{
+              minWidth: { xs: 50, md: 65 },
+              fontSize: { xs: '11px', md: '12px' },
+              flexShrink: 0,
+              display: { xs: 'none', md: 'block' },
+            }}
+          >
             {`${formatTime(currentTime)} / ${formatTime(duration)}`}
           </Typography>
 
@@ -209,13 +243,21 @@ export default function PlayerControls(props) {
             </Tooltip>
 
             <Tooltip title={theatreMode ? 'Exit Theatre Mode' : 'Theatre Mode'}>
-              <IconButton onClick={onToggleTheatreMode} color="inherit" sx={{ height: { xs: 30, md: 32 }, width: { xs: 30, md: 32 } }}>
+              <IconButton
+                onClick={onToggleTheatreMode}
+                color="inherit"
+                sx={{ height: { xs: 30, md: 32 }, width: { xs: 30, md: 32 } }}
+              >
                 {theatreMode ? <WidthNormalIcon /> : <WidthFullIcon />}
               </IconButton>
             </Tooltip>
 
             <Tooltip title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}>
-              <IconButton onClick={onToggleFullscreen} color="inherit" sx={{ height: { xs: 30, md: 32 }, width: { xs: 30, md: 32 } }}>
+              <IconButton
+                onClick={onToggleFullscreen}
+                color="inherit"
+                sx={{ height: { xs: 30, md: 32 }, width: { xs: 30, md: 32 } }}
+              >
                 {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
               </IconButton>
             </Tooltip>
@@ -253,7 +295,11 @@ export default function PlayerControls(props) {
                 {showSpeedMenu && (
                   <Box component="div" sx={{ px: 2, py: 1 }}>
                     {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3].map((speed) => (
-                      <MenuItem key={speed} onClick={() => handlePlaybackSpeedChange(speed)} selected={playbackSpeed === speed}>
+                      <MenuItem
+                        key={speed}
+                        onClick={() => handlePlaybackSpeedChange(speed)}
+                        selected={playbackSpeed === speed}
+                      >
                         {speed}x
                       </MenuItem>
                     ))}

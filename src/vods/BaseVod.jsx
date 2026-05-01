@@ -15,7 +15,23 @@ import { saveResumePosition } from '../utils/positionStorage';
 import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
 
 export default function BaseVod(props) {
-  const { origin, isYoutubeVod, youtube, handlePartChange, playerRef, part, setPart, vod, type, setDelay, timestamp, setTimestamp, setPlayerState, games, cdnBase } = props;
+  const {
+    origin,
+    isYoutubeVod,
+    youtube,
+    handlePartChange,
+    playerRef,
+    part,
+    setPart,
+    vod,
+    type,
+    setDelay,
+    timestamp,
+    setTimestamp,
+    setPlayerState,
+    games,
+    cdnBase,
+  } = props;
   const [chapter, setChapter] = useState(undefined);
   const [currentTime, setCurrentTime] = useState(undefined);
   const [playerSettings, setPlayerSettings] = useState(() => loadPlayerSettings());
@@ -34,7 +50,9 @@ export default function BaseVod(props) {
     if (!playerRef.current || !vod?.chapters?.length || currentTime === undefined) return;
 
     if (!games) {
-      const currentChapter = vod.chapters.find((chapter) => currentTime >= chapter.start && currentTime < chapter.start + chapter.end);
+      const currentChapter = vod.chapters.find(
+        (chapter) => currentTime >= chapter.start && currentTime < chapter.start + chapter.end
+      );
 
       if (currentChapter) {
         setChapter(currentChapter);
@@ -125,7 +143,15 @@ export default function BaseVod(props) {
       <Collapse in={!theatreMode} timeout="auto" unmountOnExit sx={{ minHeight: 'auto !important', width: '100%' }}>
         <Box sx={{ display: 'flex', p: 1, alignItems: 'center' }}>
           {chapter && !games && (
-            <VodChapters chapters={vod.chapters} chapter={chapter} setChapter={setChapter} setTimestamp={setTimestamp} setPart={setPart} youtube={youtube} isYoutubeVod={isYoutubeVod} />
+            <VodChapters
+              chapters={vod.chapters}
+              chapter={chapter}
+              setChapter={setChapter}
+              setTimestamp={setTimestamp}
+              setPart={setPart}
+              youtube={youtube}
+              isYoutubeVod={isYoutubeVod}
+            />
           )}
           <CustomWidthTooltip title={vod.title}>
             <Typography fontWeight={550} variant="body1" noWrap={true}>{`${vod.title}`}</Typography>
@@ -135,7 +161,13 @@ export default function BaseVod(props) {
               {isYoutubeVod && (
                 <FormControl variant="outlined">
                   <InputLabel id="select-label">Part</InputLabel>
-                  <Select labelId="select-label" label="Part" value={part.part - 1} onChange={handlePartChange} autoWidth>
+                  <Select
+                    labelId="select-label"
+                    label="Part"
+                    value={part.part - 1}
+                    onChange={handlePartChange}
+                    autoWidth
+                  >
                     {youtube.map((data, i) => {
                       return (
                         <MenuItem key={data.id} value={i}>
@@ -149,7 +181,13 @@ export default function BaseVod(props) {
               {games && (
                 <FormControl variant="outlined">
                   <InputLabel id="select-label">Game</InputLabel>
-                  <Select labelId="select-label" label="Game" value={part.part - 1} onChange={handlePartChange} autoWidth>
+                  <Select
+                    labelId="select-label"
+                    label="Game"
+                    value={part.part - 1}
+                    onChange={handlePartChange}
+                    autoWidth
+                  >
                     {games.map((data, i) => {
                       return (
                         <MenuItem key={data.id} value={i}>

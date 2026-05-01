@@ -142,7 +142,8 @@ export default function YoutubeVod(props) {
     console.info(`Chat Delay: ${userChatDelay + delay} seconds`);
   }, [userChatDelay, delay]);
 
-  if (vod === undefined || part === undefined || delay === undefined || youtube === undefined) return <Loading logo={logo} />;
+  if (vod === undefined || part === undefined || delay === undefined || youtube === undefined)
+    return <Loading logo={logo} />;
 
   if (youtube.length === 0) return <NotFound channel={channel} logo={logo} />;
 
