@@ -6,7 +6,7 @@ import Loading from '../utils/Loading';
 import { useLocation, useParams } from 'react-router-dom';
 import NotFound from '../utils/NotFound';
 import Chat from './Chat';
-import { toSeconds, convertTimestamp } from '../utils/helpers';
+import { convertTimestamp } from '../utils/helpers';
 import BaseVod from './BaseVod';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
 import PropTypes from 'prop-types';
@@ -21,7 +21,7 @@ YoutubeVod.propTypes = {
 };
 
 export default function YoutubeVod(props) {
-  const { type, archiveApiBase, channel, defaultDelay, logo, twitchId } = props;
+  const { type, archiveApiBase, channel, defaultDelay, logo, twitchId, origin } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams();
@@ -36,7 +36,7 @@ export default function YoutubeVod(props) {
   useEffect(() => {
     document.title = `${vodId} - ${channel}`;
     const fetchVod = async () => {
-      await fetch(`${archiveApiBase}/vods/${vodId}`, {
+      await fetch(`${archiveApiBase}/${channel}/vods/${vodId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -44,12 +44,18 @@ export default function YoutubeVod(props) {
       })
         .then((response) => response.json())
         .then((response) => {
-          setVod(response);
+          if (!response.success) {
+            throw response;
+          }
+          return response.data;
+        })
+        .then((data) => {
+          setVod(data);
           if (!type) {
-            const useType = response.youtube.some((youtube) => youtube.type === 'live') ? 'live' : 'vod';
-            setYoutube(response.youtube.filter((data) => data.type === useType));
+            const useType = data.vod_uploads.some((youtube) => youtube.type === 'live') ? 'live' : 'vod';
+            setYoutube(data.vod_uploads.filter((data) => data.type === useType));
           } else {
-            setYoutube(response.youtube.filter((data) => data.type === type));
+            setYoutube(data.vod_uploads.filter((data) => data.type === type));
           }
         })
         .catch((e) => {
@@ -88,7 +94,6 @@ export default function YoutubeVod(props) {
 
   useEffect(() => {
     if (!youtube || !vod) return;
-    const vodDuration = toSeconds(vod.duration);
     let totalYoutubeDuration = 0;
     for (const data of youtube) {
       if (!data.duration) {
@@ -97,7 +102,7 @@ export default function YoutubeVod(props) {
       }
       totalYoutubeDuration += data.duration;
     }
-    const tmpDelay = Math.max(0, vodDuration - totalYoutubeDuration);
+    const tmpDelay = Math.max(0, vod.duration - totalYoutubeDuration);
     setDelay(tmpDelay);
     return;
   }, [youtube, vod, defaultDelay]);
@@ -162,7 +167,7 @@ export default function YoutubeVod(props) {
             setPart={setPart}
             vod={vod}
             setPlayerState={setPlayerState}
-            origin={channel}
+            origin={origin}
           />
         </Box>
         {isPortrait && <Divider />}
@@ -180,6 +185,7 @@ export default function YoutubeVod(props) {
           isYoutubeVod={true}
           playerState={playerState}
           twitchId={twitchId}
+          channel={channel}
         />
       </Box>
     </Box>

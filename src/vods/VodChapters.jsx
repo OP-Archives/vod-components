@@ -30,7 +30,7 @@ const VodChapters = memo(function VodChapters({
   const handleChapterClick = (data) => {
     if (isYoutubeVod && youtube) {
       let part = 1;
-      let timestamp = data?.start || toSeconds(data.duration);
+      let timestamp = data?.start;
       if (timestamp > 1) {
         for (let data of youtube) {
           if (data.duration > timestamp) {
@@ -66,7 +66,7 @@ const VodChapters = memo(function VodChapters({
           return (
             <MenuItem
               onClick={() => handleChapterClick(data)}
-              key={(data?.gameId || data.name) + (data?.start || data.duration)}
+              key={`${data?.gameId}-${data?.start}`}
               selected={data.start === chapter.start}
             >
               <Box sx={{ display: 'flex' }}>
@@ -80,7 +80,7 @@ const VodChapters = memo(function VodChapters({
                       variant="caption"
                       color="textSecondary"
                       noWrap
-                    >{`${humanize(data.end * 1000, { largest: 2 })}`}</Typography>
+                    >{`${humanize(data.duration * 1000, { largest: 2 })}`}</Typography>
                   )}
                 </Box>
               </Box>

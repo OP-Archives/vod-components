@@ -34,7 +34,7 @@ export default function CustomVod(props) {
     document.title = `${vodId} - ${channel}`;
     const fetchVod = async () => {
       try {
-        await fetch(`${archiveApiBase}/vods/${vodId}`, {
+        await fetch(`${archiveApiBase}/${channel}/vods/${vodId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -42,7 +42,13 @@ export default function CustomVod(props) {
         })
           .then((response) => response.json())
           .then((response) => {
-            setVod(response);
+            if (!response.success) {
+              throw response;
+            }
+            return response.data;
+          })
+          .then((data) => {
+            setVod(data);
           })
           .catch((e) => {
             console.error(e);

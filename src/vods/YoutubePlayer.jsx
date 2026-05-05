@@ -37,7 +37,7 @@ export default function YoutubePlayer(props) {
       playerRef.current.loadVideoById(games[part.part - 1].video_id, part.timestamp);
     } else {
       const index = youtube.findIndex((data) => data.part === part.part);
-      playerRef.current.loadVideoById(youtube[index !== -1 ? index : part.part - 1].id, part.timestamp);
+      playerRef.current.loadVideoById(youtube[index !== -1 ? index : part.part - 1].upload_id, part.timestamp);
     }
   }, [part, playerRef, youtube, games]);
 
@@ -78,7 +78,7 @@ export default function YoutubePlayer(props) {
       playerRef.current.loadVideoById(games[part.part - 1].video_id, part.timestamp);
     } else {
       const index = youtube.findIndex((data) => data.part === part.part);
-      playerRef.current.loadVideoById(youtube[index !== -1 ? index : 0].id, part.timestamp);
+      playerRef.current.loadVideoById(youtube[index !== -1 ? index : 0].upload_id, part.timestamp);
     }
   };
 

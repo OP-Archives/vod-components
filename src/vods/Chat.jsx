@@ -54,6 +54,7 @@ export default function Chat(props) {
     setUserChatDelay,
     twitchId,
     archiveApiBase,
+    channel,
   } = props;
 
   // State management
@@ -110,18 +111,20 @@ export default function Chat(props) {
   // === EFFECT HOOKS ===
   useEffect(() => {
     const loadBadges = () => {
-      fetch(`${archiveApiBase}/v2/badges`, {
+      fetch(`${archiveApiBase}/${channel}/badges/twitch`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       })
         .then((response) => response.json())
-        .then((data) => {
-          if (data.error) {
-            console.warn('Failed to load badges:', data.error);
-            return;
+        .then((response) => {
+          if (!response.success) {
+            throw response;
           }
+          return response.data;
+        })
+        .then((data) => {
           badges.current = data || { channel: {}, global: {} };
         })
         .catch((e) => {
@@ -131,11 +134,11 @@ export default function Chat(props) {
     };
 
     const loadEmotes = async () => {
-      await Promise.all([loadArchiveEmotes(), load7TVGlobalEmotes()]);
+      await Promise.all([loadArchiveEmotes()]);
     };
 
     const loadArchiveEmotes = async () => {
-      await fetch(`${archiveApiBase}/emotes?vod_id=${vodId}`, {
+      await fetch(`${archiveApiBase}/${channel}/vods/${vodId}/emotes`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -143,15 +146,26 @@ export default function Chat(props) {
       })
         .then((response) => response.json())
         .then((response) => {
-          if (response.data.length === 0) {
-            fallbackLoadEmotes();
-            return;
+          if (!response.success) {
+            throw response;
           }
+          return response.data;
+        })
+        .then((data) => {
           setEmotes({
-            ffz_emotes: response.data[0].ffz_emotes || [],
-            bttv_emotes: response.data[0].bttv_emotes || [],
-            seventv_emotes: response.data[0]?.seventv_emotes || response.data[0]?.['7tv_emotes'] || [],
+            ffz_emotes: data?.ffz_emotes || [],
+            bttv_emotes: data?.bttv_emotes || [],
+            seventv_emotes: data?.seventv_emotes || [],
           });
+          if (data?.ffz_emotes.length == 0) {
+            loadFFZEmotes();
+          }
+          if (data?.bttv_emotes.length == 0) {
+            Promise.all([loadBTTVChannelEmotes(), loadBTTVGlobalEmotes()]);
+          }
+          if (data?.seventv_emotes.length == 0) {
+            Promise.all([load7TVEmotes(), load7TVGlobalEmotes()]);
+          }
         })
         .catch((e) => {
           console.error(e);
@@ -160,7 +174,13 @@ export default function Chat(props) {
     };
 
     const fallbackLoadEmotes = async () => {
-      await Promise.all([loadBTTVChannelEmotes(), loadBTTVGlobalEmotes(), load7TVEmotes(), loadFFZEmotes()]);
+      await Promise.all([
+        loadBTTVChannelEmotes(),
+        loadBTTVGlobalEmotes(),
+        load7TVEmotes(),
+        load7TVGlobalEmotes(),
+        loadFFZEmotes(),
+      ]);
     };
 
     const loadBTTVGlobalEmotes = async () => {
@@ -241,7 +261,7 @@ export default function Chat(props) {
 
     loadEmotes();
     loadBadges();
-  }, [vodId, archiveApiBase, twitchId]);
+  }, [vodId, archiveApiBase, twitchId, channel]);
 
   // === MEMOIZED VALUES ===
   const emoteLookup = useMemo(() => {
@@ -553,7 +573,7 @@ export default function Chat(props) {
 
       fetchControllerRef.current = new AbortController();
 
-      fetch(`${archiveApiBase}/v1/vods/${vodId}/comments?cursor=${cursor.current}`, {
+      fetch(`${archiveApiBase}/${channel}/vods/${vodId}/comments?cursor=${cursor.current}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -562,10 +582,16 @@ export default function Chat(props) {
       })
         .then((response) => response.json())
         .then((response) => {
+          if (!response.success) {
+            throw response;
+          }
+          return response.data;
+        })
+        .then((data) => {
           if (fetchControllerRef.current && !fetchControllerRef.current.signal.aborted) {
             stoppedAtIndex.current = 0;
-            comments.current = response.comments;
-            cursor.current = response.cursor;
+            comments.current = data.comments;
+            cursor.current = data.cursor;
           }
         })
         .catch((e) => {
@@ -753,6 +779,7 @@ export default function Chat(props) {
     isPlaying,
     shouldFilterMessage,
     archiveApiBase,
+    channel,
   ]);
 
   const scrollToBottom = () => {
@@ -920,7 +947,7 @@ export default function Chat(props) {
 
       fetchControllerRef.current = new AbortController();
 
-      fetch(`${archiveApiBase}/v1/vods/${vodId}/comments?content_offset_seconds=${Math.floor(offset)}`, {
+      fetch(`${archiveApiBase}/${channel}/vods/${vodId}/comments?content_offset_seconds=${Math.floor(offset)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -929,9 +956,15 @@ export default function Chat(props) {
       })
         .then((response) => response.json())
         .then((response) => {
+          if (!response.success) {
+            throw response;
+          }
+          return response.data;
+        })
+        .then((data) => {
           if (fetchControllerRef.current && !fetchControllerRef.current.signal.aborted) {
-            comments.current = response.comments;
-            cursor.current = response.cursor;
+            comments.current = data.comments;
+            cursor.current = data.cursor;
           }
         })
         .catch((e) => {
@@ -956,7 +989,7 @@ export default function Chat(props) {
         currentChatRef.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [vodId, playerRef, playerState, getCurrentTime, handleScroll, loop, isPlaying, archiveApiBase]);
+  }, [vodId, playerRef, playerState, getCurrentTime, handleScroll, loop, isPlaying, archiveApiBase, channel]);
 
   // === RENDERING ===
   return (
