@@ -152,19 +152,26 @@ export default function Chat(props) {
           return response.data;
         })
         .then((data) => {
-          setEmotes({
-            ffz_emotes: data?.ffz_emotes || [],
-            bttv_emotes: data?.bttv_emotes || [],
-            seventv_emotes: data?.seventv_emotes || [],
-          });
-          if (data?.ffz_emotes.length == 0) {
-            loadFFZEmotes();
+          const hasFfz = data?.ffz_emotes?.length;
+          const hasBttv = data?.bttv_emotes?.length;
+          const has7tv = data?.seventv_emotes?.length;
+
+          if (hasFfz || hasBttv || has7tv) {
+            setEmotes((prev) => ({
+              ffz_emotes: hasFfz ? data.ffz_emotes : prev.ffz_emotes,
+              bttv_emotes: hasBttv ? data.bttv_emotes : prev.bttv_emotes,
+              seventv_emotes: has7tv ? data.seventv_emotes : prev.seventv_emotes,
+            }));
           }
-          if (data?.bttv_emotes.length == 0) {
-            Promise.all([loadBTTVChannelEmotes(), loadBTTVGlobalEmotes()]);
+
+          if (!hasFfz) loadFFZEmotes();
+          if (!hasBttv) {
+            loadBTTVChannelEmotes();
+            loadBTTVGlobalEmotes();
           }
-          if (data?.seventv_emotes.length == 0) {
-            Promise.all([load7TVEmotes(), load7TVGlobalEmotes()]);
+          if (!has7tv) {
+            load7TVEmotes();
+            load7TVGlobalEmotes();
           }
         })
         .catch((e) => {
