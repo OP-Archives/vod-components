@@ -150,6 +150,7 @@ export default function Games(props) {
           setUserChatDelay={setUserChatDelay}
           playerState={playerState}
           twitchId={twitchId}
+          channel={channel}
         />
       </Box>
     </Box>

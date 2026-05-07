@@ -296,7 +296,7 @@ export default function Chat(props) {
       }
       time += playerRef.current.getCurrentTime() ?? 0;
     } else if (games) {
-      time += parseFloat(games[part.part - 1].start_time);
+      time += parseFloat(games[part.part - 1].start);
       time += playerRef.current.getCurrentTime() ?? 0;
     } else {
       time += playerRef.current.currentTime ?? 0;

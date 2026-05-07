@@ -134,6 +134,7 @@ export default function CustomVod(props) {
           isYoutubeVod={false}
           playerState={playerState}
           twitchId={twitchId}
+          channel={channel}
         />
       </Box>
     </Box>
