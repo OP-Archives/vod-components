@@ -303,7 +303,7 @@ export default function Player(props) {
     const duration = playerRef.current.duration;
     setDuration(duration);
 
-    const vodDuration = toSeconds(vod.duration);
+    const vodDuration = vod.duration;
     const tmpDelay = vodDuration - duration < 0 ? 0 : vodDuration - duration;
     setDelay(tmpDelay);
   };
@@ -338,7 +338,7 @@ export default function Player(props) {
         playerDuration = playerRef.current.duration;
         await sleep(100);
       }
-      const vodDuration = toSeconds(vod.duration);
+      const vodDuration = vod.duration;
       const tmpDelay = vodDuration - playerDuration < 0 ? 0 : vodDuration - playerDuration;
       setDelay(tmpDelay);
       setDuration(playerDuration);
