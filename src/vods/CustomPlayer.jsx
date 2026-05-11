@@ -73,7 +73,7 @@ export default function Player(props) {
   // HLS streaming with MP4 fallback
   useEffect(() => {
     if (type === 'cdn') {
-      const hlsUrl = `${cdnBase}/videos/${vod.platform_vod_id}/${vod.platform_vod_id}.m3u8`;
+      const hlsUrl = `${cdnBase}/videos/${vod.platform_vod_id}/hls/${vod.platform_vod_id}.m3u8`;
       setSource(hlsUrl);
 
       if (Hls.isSupported()) {
