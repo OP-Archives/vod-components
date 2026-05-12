@@ -6,7 +6,7 @@ import Paper from '@mui/material/Paper';
 import PlayerControls from './PlayerControls';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import Hls from 'hls.js';
-import { toSeconds, sleep } from '../utils/helpers';
+import { sleep } from '../utils/helpers';
 import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import canAutoplay from 'can-autoplay';
@@ -105,7 +105,7 @@ export default function Player(props) {
       if (hlsInstance.current) hlsInstance.current.destroy();
       stopLoop();
     };
-  }, [type, cdnBase, vod.id, playerRef, stopLoop]);
+  }, [type, cdnBase, vod, playerRef, stopLoop]);
 
   const timeUpdate = useCallback(() => {
     if (!playerRef.current || playerRef.current.paused) return;
@@ -312,9 +312,15 @@ export default function Player(props) {
   useEffect(() => {
     if (source && playerRef.current) {
       canAutoplay.video({ inline: true }).then(async (obj) => {
+        // Guard against unmount between promise resolve and this callback
+        if (!playerRef.current) return;
+
         if (obj.result) return (playerRef.current.muted = isMuted);
 
         let mutedAutoplay = await canAutoplay.video({ muted: true, inline: true });
+        // Guard against unmount between first and second promise resolve
+        if (!playerRef.current) return;
+
         if (mutedAutoplay.result) return (playerRef.current.muted = true);
 
         setIsPlaying(false);

@@ -4,7 +4,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import SimpleBar from 'simplebar-react';
 
 export default function ChatMessages(props) {
-  const { comments, shownMessages, scrolling, scrollToBottom, chatRef, handleScroll } = props;
+  const { comments, shownMessages, scrolling, scrollToBottom, chatRef, handleScroll, handleImageLoad } = props;
 
   if (comments && comments.length === 0) {
     return (
@@ -39,6 +39,7 @@ export default function ChatMessages(props) {
           }}
         >
           <Box
+            onLoadCapture={handleImageLoad}
             sx={{
               display: 'flex',
               flexWrap: 'wrap',

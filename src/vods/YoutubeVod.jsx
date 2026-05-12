@@ -34,6 +34,8 @@ export default function YoutubeVod(props) {
   const playerRef = useRef(null);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     document.title = `${vodId} - ${channel}`;
     const fetchVod = async () => {
       await fetch(`${archiveApiBase}/${channel}/vods/${vodId}`, {
@@ -41,6 +43,7 @@ export default function YoutubeVod(props) {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: abortController.signal,
       })
         .then((response) => response.json())
         .then((response) => {
@@ -59,11 +62,15 @@ export default function YoutubeVod(props) {
           }
         })
         .catch((e) => {
-          console.error(e);
+          if (e.name !== 'AbortError') {
+            console.error(e);
+          }
         });
     };
     fetchVod();
-    return;
+    return () => {
+      abortController.abort();
+    };
   }, [vodId, type, archiveApiBase, channel]);
 
   useEffect(() => {

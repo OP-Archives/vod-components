@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import prettier from 'eslint-plugin-prettier';
+import globals from 'globals';
 
 export default [
   js.configs.recommended,
@@ -20,21 +21,8 @@ export default [
         },
       },
       globals: {
-        window: 'readonly',
-        document: 'readonly',
-        navigator: 'readonly',
-        console: 'readonly',
-        process: 'readonly',
-        require: 'readonly',
-        localStorage: 'readonly',
-        setTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearTimeout: 'readonly',
-        clearInterval: 'readonly',
-        fetch: 'readonly',
-        requestAnimationFrame: 'readonly',
-        URL: 'readonly',
-        URLSearchParams: 'readonly',
+        ...globals.browser,
+        ...globals.node,
       },
     },
     settings: {

@@ -13,17 +13,6 @@ import ChatSettingsModal from './Chat/ChatSettingsModal';
 import MessageTooltip from './Chat/MessageTooltip';
 import IconButton from '@mui/material/IconButton';
 
-const AbortController =
-  window.AbortController ||
-  class AbortController {
-    constructor() {
-      this.signal = { aborted: false };
-    }
-    abort() {
-      this.signal.aborted = true;
-    }
-  };
-
 // CDN URLs for emotes and badges
 const BASE_TWITCH_CDN = 'https://static-cdn.jtvnw.net';
 const BASE_FFZ_EMOTE_CDN = 'https://cdn.frankerfacez.com/emote';
@@ -32,9 +21,6 @@ const BASE_7TV_EMOTE_CDN = 'https://cdn.7tv.app/emote';
 const BASE_FFZ_EMOTE_API = 'https://api.frankerfacez.com/v1';
 const BASE_BTTV_EMOTE_API = 'https://api.betterttv.net/3';
 const BASE_7TV_EMOTE_API = 'https://7tv.io/v3';
-
-// Cache for badges
-let cachedBadges = new Map();
 
 // Pixels of tolerance before considering user scrolled up from bottom
 const SCROLL_TOLERANCE = 50;
@@ -102,7 +88,6 @@ export default function Chat(props) {
   const chatRef = useRef();
   const stoppedAtIndex = useRef(0);
   const newMessages = useRef();
-  const fetchControllerRef = useRef(null);
   const lastScrollHeight = useRef(0);
   const isAutoScrolling = useRef(false);
   const lastScrollTop = useRef(0);
@@ -110,12 +95,15 @@ export default function Chat(props) {
 
   // === EFFECT HOOKS ===
   useEffect(() => {
+    const abortController = new AbortController();
+
     const loadBadges = () => {
       fetch(`${archiveApiBase}/${channel}/badges/twitch`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: abortController.signal,
       })
         .then((response) => response.json())
         .then((response) => {
@@ -128,13 +116,11 @@ export default function Chat(props) {
           badges.current = data || { channel: {}, global: {} };
         })
         .catch((e) => {
-          console.error('Badge loading failed:', e);
-          badges.current = { channel: {}, global: {} };
+          if (e.name !== 'AbortError') {
+            console.error('Badge loading failed:', e);
+            badges.current = { channel: {}, global: {} };
+          }
         });
-    };
-
-    const loadEmotes = async () => {
-      await Promise.all([loadArchiveEmotes()]);
     };
 
     const loadArchiveEmotes = async () => {
@@ -143,6 +129,7 @@ export default function Chat(props) {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: abortController.signal,
       })
         .then((response) => response.json())
         .then((response) => {
@@ -164,19 +151,23 @@ export default function Chat(props) {
             }));
           }
 
+          //Always load global emotes.
+          loadBTTVGlobalEmotes();
+          load7TVGlobalEmotes();
+
           if (!hasFfz) loadFFZEmotes();
           if (!hasBttv) {
             loadBTTVChannelEmotes();
-            loadBTTVGlobalEmotes();
           }
           if (!has7tv) {
             load7TVEmotes();
-            load7TVGlobalEmotes();
           }
         })
         .catch((e) => {
-          console.error(e);
-          fallbackLoadEmotes();
+          if (e.name !== 'AbortError') {
+            console.error(e);
+            fallbackLoadEmotes();
+          }
         });
     };
 
@@ -193,6 +184,7 @@ export default function Chat(props) {
     const loadBTTVGlobalEmotes = async () => {
       await fetch(`${BASE_BTTV_EMOTE_API}/cached/emotes/global`, {
         method: 'GET',
+        signal: abortController.signal,
       })
         .then((response) => response.json())
         .then((data) => {
@@ -200,13 +192,16 @@ export default function Chat(props) {
           setEmotes((emotes) => ({ ...emotes, bttv_emotes: emotes.bttv_emotes.concat(data || []) }));
         })
         .catch((e) => {
-          console.error(e);
+          if (e.name !== 'AbortError') {
+            console.error(e);
+          }
         });
     };
 
     const loadBTTVChannelEmotes = async () => {
       await fetch(`${BASE_BTTV_EMOTE_API}/cached/users/twitch/${twitchId}`, {
         method: 'GET',
+        signal: abortController.signal,
       })
         .then((response) => response.json())
         .then((data) => {
@@ -217,13 +212,16 @@ export default function Chat(props) {
           }));
         })
         .catch((e) => {
-          console.error(e);
+          if (e.name !== 'AbortError') {
+            console.error(e);
+          }
         });
     };
 
     const loadFFZEmotes = async () => {
       await fetch(`${BASE_FFZ_EMOTE_API}/room/id/${twitchId}`, {
         method: 'GET',
+        signal: abortController.signal,
       })
         .then((response) => response.json())
         .then((data) => {
@@ -232,13 +230,16 @@ export default function Chat(props) {
           setEmotes((emotes) => ({ ...emotes, ffz_emotes: emoticons }));
         })
         .catch((e) => {
-          console.error(e);
+          if (e.name !== 'AbortError') {
+            console.error(e);
+          }
         });
     };
 
     const load7TVEmotes = async () => {
       await fetch(`${BASE_7TV_EMOTE_API}/users/twitch/${twitchId}`, {
         method: 'GET',
+        signal: abortController.signal,
       })
         .then((response) => response.json())
         .then((data) => {
@@ -246,7 +247,9 @@ export default function Chat(props) {
           setEmotes((emotes) => ({ ...emotes, seventv_emotes: data.emote_set?.emotes || [] }));
         })
         .catch((e) => {
-          console.error(e);
+          if (e.name !== 'AbortError') {
+            console.error(e);
+          }
         });
     };
 
@@ -256,18 +259,25 @@ export default function Chat(props) {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: abortController.signal,
       })
         .then((response) => response.json())
         .then((data) => {
           setEmotes((emotes) => ({ ...emotes, seventv_emotes: emotes.seventv_emotes.concat(data.emotes || []) }));
         })
         .catch((e) => {
-          console.error(e);
+          if (e.name !== 'AbortError') {
+            console.error(e);
+          }
         });
     };
 
-    loadEmotes();
+    loadArchiveEmotes();
     loadBadges();
+
+    return () => {
+      abortController.abort();
+    };
   }, [vodId, archiveApiBase, twitchId, channel]);
 
   // === MEMOIZED VALUES ===
@@ -378,6 +388,7 @@ export default function Chat(props) {
                 verticalAlign: 'middle',
                 border: 'none',
                 maxWidth: '100%',
+                minHeight: '28px',
               }}
               src={getEmoteImageUrl(emote, emoteType)}
               srcSet={getEmoteImageSrcSet(emote, emoteType)}
@@ -562,7 +573,19 @@ export default function Chat(props) {
     if (!isPlaying()) return;
 
     const time = getCurrentTime();
-    let lastIndex = comments.current.length - 1;
+
+    //If the time drops below the last processed message, reset the chat array
+    if (
+      stoppedAtIndex.current > 0 &&
+      comments.current[stoppedAtIndex.current - 1] &&
+      comments.current[stoppedAtIndex.current - 1].content_offset_seconds > time
+    ) {
+      setShownMessages([]);
+      stoppedAtIndex.current = 0;
+    }
+
+    //Default to the FULL length of the array, not length - 1,
+    let lastIndex = comments.current.length;
     for (let i = stoppedAtIndex.current.valueOf(); i < comments.current.length; i++) {
       if (comments.current[i].content_offset_seconds > time) {
         lastIndex = i;
@@ -574,18 +597,11 @@ export default function Chat(props) {
     if (stoppedAtIndex.current === lastIndex && stoppedAtIndex.current !== 0) return;
 
     const fetchNextComments = () => {
-      if (fetchControllerRef.current) {
-        fetchControllerRef.current.abort();
-      }
-
-      fetchControllerRef.current = new AbortController();
-
       fetch(`${archiveApiBase}/${channel}/vods/${vodId}/comments?cursor=${cursor.current}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        signal: fetchControllerRef.current.signal,
       })
         .then((response) => response.json())
         .then((response) => {
@@ -595,11 +611,9 @@ export default function Chat(props) {
           return response.data;
         })
         .then((data) => {
-          if (fetchControllerRef.current && !fetchControllerRef.current.signal.aborted) {
-            stoppedAtIndex.current = 0;
-            comments.current = data.comments;
-            cursor.current = data.cursor;
-          }
+          stoppedAtIndex.current = 0;
+          comments.current = data.comments;
+          cursor.current = data.cursor;
         })
         .catch((e) => {
           if (e.name !== 'AbortError') {
@@ -619,58 +633,12 @@ export default function Chat(props) {
         const badgeId = textBadge._id ?? textBadge.setID;
         const version = textBadge.version;
 
-        const cachedKey = `${badgeId}-${version}`;
-        if (cachedBadges.has(cachedKey)) {
-          const cachedBadge = cachedBadges.get(cachedKey);
-          const { badgeVersion } = cachedBadge;
-
-          badgeWrapper.push(
-            <MessageTooltip
-              key={`${keyPrefix}-badge-${badgeId}-${version}`}
-              title={
-                <Box sx={{ maxWidth: '30rem', textAlign: 'center' }}>
-                  <img
-                    crossOrigin="anonymous"
-                    style={{
-                      marginBottom: '0.3rem',
-                      border: 'none',
-                      maxWidth: '100%',
-                      verticalAlign: 'top',
-                    }}
-                    src={badgeVersion.image_url_4x}
-                    alt=""
-                  />
-                  <Typography sx={{ display: 'block' }} variant="caption">{`${badgeId}`}</Typography>
-                </Box>
-              }
-            >
-              <img
-                crossOrigin="anonymous"
-                style={{
-                  display: 'inline-block',
-                  minWidth: '1rem',
-                  height: '1rem',
-                  margin: '0 .2rem .1rem 0',
-                  backgroundPosition: '50%',
-                  verticalAlign: 'middle',
-                }}
-                srcSet={`${badgeVersion.image_url_1x} 1x, ${badgeVersion.image_url_2x} 2x, ${badgeVersion.image_url_4x} 4x`}
-                src={badgeVersion.image_url_1x}
-                alt=""
-              />
-            </MessageTooltip>
-          );
-          continue;
-        }
-
         const badge =
           channelBadges?.find((b) => b.set_id === badgeId) || globalBadges?.find((b) => b.set_id === badgeId);
         if (!badge) continue;
 
         const badgeVersion = badge.versions.find((v) => v.id === version);
         if (!badgeVersion) continue;
-
-        cachedBadges.set(cachedKey, { badgeVersion });
 
         badgeWrapper.push(
           <MessageTooltip
@@ -714,7 +682,7 @@ export default function Chat(props) {
     };
 
     newMessages.current = [];
-    // Create only new messages, not all messages
+    // Create only new messages
     for (let i = stoppedAtIndex.current.valueOf(); i < lastIndex; i++) {
       const comment = comments.current[i];
       if (!comment.message) continue;
@@ -766,16 +734,25 @@ export default function Chat(props) {
 
     // Only update state if there are new messages
     if (newMessages.current.length > 0) {
-      setShownMessages((shownMessages) => {
-        const concatMessages = shownMessages.concat(newMessages.current);
+      setShownMessages((prevShownMessages) => {
+        // 1. Extract the unique keys currently rendered in the chat window
+        const existingKeys = new Set(prevShownMessages.map((msg) => msg.key));
+
+        // 2. Filter out any new messages from the API that we've already rendered
+        const uniqueNewMessages = newMessages.current.filter((msg) => !existingKeys.has(msg.key));
+
+        // 3. Combine and trim
+        const concatMessages = prevShownMessages.concat(uniqueNewMessages);
+
         // Keep only the last 200 messages to prevent memory issues
         if (concatMessages.length > 200) {
           concatMessages.splice(0, concatMessages.length - 200);
         }
         return concatMessages;
       });
+
       stoppedAtIndex.current = lastIndex;
-      if (comments.current.length - 1 === lastIndex) fetchNextComments();
+      if (comments.current.length === lastIndex) fetchNextComments();
     }
   }, [
     getCurrentTime,
@@ -802,55 +779,60 @@ export default function Chat(props) {
         isAutoScrolling.current = false;
         return;
       }
-
       if (chatRef.current) {
         chatRef.current.scrollTop = chatRef.current.scrollHeight;
-
         setTimeout(() => {
           isAutoScrolling.current = false;
         }, 150);
       }
     };
 
-    const waitForImages = () => {
-      const chatContainer = chatRef.current;
-      if (!chatContainer) {
-        isAutoScrolling.current = false;
-        return;
-      }
-
-      const images = chatContainer.querySelectorAll('img');
-      if (images.length === 0) {
-        scrollToBottomSmooth();
-        return;
-      }
-
-      let loadedCount = 0;
-      const totalImages = images.length;
-
-      const checkIfDone = () => {
-        loadedCount++;
-        if (loadedCount >= totalImages) {
-          scrollToBottomSmooth();
-        }
-      };
-
-      images.forEach((img) => {
-        if (img.complete) {
-          checkIfDone();
-        } else {
-          img.onload = checkIfDone;
-          img.onerror = checkIfDone;
-        }
-      });
-
-      setTimeout(scrollToBottomSmooth, 500);
-    };
-
-    requestAnimationFrame(() => {
-      waitForImages();
-    });
+    scrollToBottomSmooth();
   };
+
+  const handleImageLoad = useCallback(() => {
+    // Only scroll if the user was already at the bottom
+    if (!isAtBottomRef.current || scrollingRef.current) return;
+
+    // Use requestAnimationFrame to batch multiple image loads in the same frame
+    if (!isAutoScrolling.current) {
+      isAutoScrolling.current = true;
+      requestAnimationFrame(() => {
+        if (chatRef.current) {
+          chatRef.current.scrollTop = chatRef.current.scrollHeight;
+        }
+        setTimeout(() => {
+          isAutoScrolling.current = false;
+        }, 50);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!chatRef.current) return;
+
+    // SimpleBar's outer container is fixed height.
+    // We MUST observe the inner wrapper that actually grows when images pop in.
+    const innerContent = chatRef.current.firstElementChild;
+    if (!innerContent) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (isAtBottomRef.current && !scrollingRef.current) {
+        // Lock the scroll handler so it doesn't think the user manually scrolled up
+        isAutoScrolling.current = true;
+        chatRef.current.scrollTop = chatRef.current.scrollHeight;
+
+        // Unlock after the layout shift paints
+        setTimeout(() => {
+          isAutoScrolling.current = false;
+        }, 50);
+      }
+    });
+
+    resizeObserver.observe(innerContent);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   useEffect(() => {
     if (scrolling || !isAtBottomRef.current || shownMessages.length === 0) return;
@@ -912,9 +894,37 @@ export default function Chat(props) {
 
   // === MAIN EFFECT HOOK ===
   useEffect(() => {
+    const abortController = new AbortController();
+
     if (playRef.current) clearTimeout(playRef.current);
     //Player not initalized yet
     if (playerState === -1 || !playerRef.current) return;
+
+    const fetchComments = (offset = 0) => {
+      fetch(`${archiveApiBase}/${channel}/vods/${vodId}/comments?content_offset_seconds=${Math.floor(offset)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: abortController.signal,
+      })
+        .then((response) => response.json())
+        .then((response) => {
+          if (!response.success) {
+            throw response;
+          }
+          return response.data;
+        })
+        .then((data) => {
+          comments.current = data.comments;
+          cursor.current = data.cursor;
+        })
+        .catch((e) => {
+          if (e.name !== 'AbortError') {
+            console.error(e);
+          }
+        });
+    };
 
     // Handle player play/pause state changes
     const handlePlayerStateChange = () => {
@@ -947,51 +957,15 @@ export default function Chat(props) {
       }
     };
 
-    const fetchComments = (offset = 0) => {
-      if (fetchControllerRef.current) {
-        fetchControllerRef.current.abort();
-      }
-
-      fetchControllerRef.current = new AbortController();
-
-      fetch(`${archiveApiBase}/${channel}/vods/${vodId}/comments?content_offset_seconds=${Math.floor(offset)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: fetchControllerRef.current.signal,
-      })
-        .then((response) => response.json())
-        .then((response) => {
-          if (!response.success) {
-            throw response;
-          }
-          return response.data;
-        })
-        .then((data) => {
-          if (fetchControllerRef.current && !fetchControllerRef.current.signal.aborted) {
-            comments.current = data.comments;
-            cursor.current = data.cursor;
-          }
-        })
-        .catch((e) => {
-          if (e.name !== 'AbortError') {
-            console.error(e);
-          }
-        });
-    };
-
     handlePlayerStateChange();
 
     const currentChatRef = chatRef.current;
 
     return () => {
+      abortController.abort();
       stopLoop();
-      if (fetchControllerRef.current) {
-        fetchControllerRef.current.abort();
-        fetchControllerRef.current = null;
-      }
-      // Clean up scroll event listener with proper ref handling
+      if (playRef.current) clearTimeout(playRef.current);
+
       if (currentChatRef) {
         currentChatRef.removeEventListener('scroll', handleScroll);
       }
@@ -1025,6 +999,7 @@ export default function Chat(props) {
               scrollToBottom={scrollToBottom}
               chatRef={chatRef}
               handleScroll={handleScroll}
+              handleImageLoad={handleImageLoad}
             />
           </Box>
         </>

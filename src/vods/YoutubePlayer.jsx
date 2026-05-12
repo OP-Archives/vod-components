@@ -66,12 +66,19 @@ export default function YoutubePlayer(props) {
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      stopLoop();
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+    };
+  }, [stopLoop]);
+
   const onReady = (evt) => {
     const player = evt.target;
     playerRef.current = player;
 
     canAutoplay.video().then(({ result }) => {
-      if (!result) playerRef.current.mute();
+      if (!result && playerRef.current) playerRef.current.mute();
     });
 
     if (games) {
