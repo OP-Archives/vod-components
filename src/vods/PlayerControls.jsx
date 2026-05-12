@@ -50,6 +50,7 @@ export default function PlayerControls(props) {
   const [settingsAnchorEl, setSettingsAnchorEl] = useState(null);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const autoHideTimerRef = useRef(null);
+  const closeSettingsTimerRef = useRef(null);
 
   useEffect(() => {
     const handleMouseMove = () => {
@@ -105,6 +106,7 @@ export default function PlayerControls(props) {
   useEffect(() => {
     return () => {
       if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+      if (closeSettingsTimerRef.current) clearTimeout(closeSettingsTimerRef.current);
     };
   }, []);
 
@@ -125,7 +127,7 @@ export default function PlayerControls(props) {
   const handleCloseSettings = () => {
     setIsMenuOpen(false);
 
-    setTimeout(() => {
+    closeSettingsTimerRef.current = setTimeout(() => {
       setSettingsAnchorEl(null);
       setShowSpeedMenu(false);
     }, 250);

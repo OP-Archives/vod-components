@@ -88,6 +88,7 @@ export default function Chat(props) {
   const chatRef = useRef();
   const stoppedAtIndex = useRef(0);
   const newMessages = useRef();
+  const paginationAbortRef = useRef(null);
   const lastScrollHeight = useRef(0);
   const isAutoScrolling = useRef(false);
   const lastScrollTop = useRef(0);
@@ -597,11 +598,17 @@ export default function Chat(props) {
     if (stoppedAtIndex.current === lastIndex && stoppedAtIndex.current !== 0) return;
 
     const fetchNextComments = () => {
+      if (paginationAbortRef.current) {
+        paginationAbortRef.current.abort();
+      }
+      paginationAbortRef.current = new AbortController();
+
       fetch(`${archiveApiBase}/${channel}/vods/${vodId}/comments?cursor=${cursor.current}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: paginationAbortRef.current.signal,
       })
         .then((response) => response.json())
         .then((response) => {
@@ -832,6 +839,12 @@ export default function Chat(props) {
     resizeObserver.observe(innerContent);
 
     return () => resizeObserver.disconnect();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (paginationAbortRef.current) paginationAbortRef.current.abort();
+    };
   }, []);
 
   useEffect(() => {

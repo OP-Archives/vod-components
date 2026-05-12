@@ -340,10 +340,11 @@ export default function Player(props) {
 
     const set = async () => {
       let playerDuration = playerRef.current.duration;
-      while (isNaN(playerDuration) || playerDuration === 0) {
+      while (playerRef.current && (isNaN(playerDuration) || playerDuration === 0)) {
         playerDuration = playerRef.current.duration;
         await sleep(100);
       }
+      if (!playerRef.current) return;
       const vodDuration = vod.duration;
       const tmpDelay = vodDuration - playerDuration < 0 ? 0 : vodDuration - playerDuration;
       setDelay(tmpDelay);
