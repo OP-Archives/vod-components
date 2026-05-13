@@ -1,14 +1,17 @@
 import { useEffect, useState, useRef } from 'react';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Divider from '@mui/material/Divider';
 import Loading from '../utils/Loading';
 import { useLocation, useParams } from 'react-router-dom';
-import NotFound from '../utils/NotFound';
 import Chat from './Chat';
 import BaseVod from './BaseVod';
 import PropTypes from 'prop-types';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 Games.propTypes = {
   archiveApiBase: PropTypes.string.isRequired,
@@ -66,6 +69,11 @@ export default function Games(props) {
   useEffect(() => {
     if (!vod) return;
     setGames(vod.games);
+    if (!vod.games || vod.games.length === 0) {
+      setPart(null);
+      return;
+    }
+
     const search = new URLSearchParams(location.search);
 
     //Check if game id is in query
@@ -124,9 +132,42 @@ export default function Games(props) {
     return;
   }, [userChatDelay]);
 
-  if (vod === undefined || part === undefined) return <Loading logo={logo} />;
+  if (vod === undefined) return <Loading logo={logo} />;
 
-  if (games.length === 0) return <NotFound channel={channel} logo={logo} />;
+  if (!games || games.length === 0) {
+    return (
+      <Box
+        sx={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2,
+        }}
+      >
+        {logo && <img src={logo} alt="" style={{ height: 'auto', maxWidth: '200px' }} />}
+        <Typography variant="h6" color="text.secondary">
+          No games found
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {vod.prev && (
+            <IconButton component="a" href={`/games/${vod.prev.id}`}>
+              <NavigateBeforeIcon />
+              Previous Game
+            </IconButton>
+          )}
+          {vod.next && (
+            <IconButton component="a" href={`/games/${vod.next.id}`}>
+              Next Game
+              <NavigateNextIcon />
+            </IconButton>
+          )}
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ height: '100%', width: '100%' }}>

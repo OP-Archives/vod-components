@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Collapse from '@mui/material/Collapse';
@@ -35,6 +36,9 @@ export default function BaseVod(props) {
     games,
     cdnBase,
   } = props;
+  const location = useLocation();
+  const pathPrefix = location.pathname.split('/')[1];
+
   const [chapter, setChapter] = useState(undefined);
   const [currentTime, setCurrentTime] = useState(undefined);
   const [playerSettings, setPlayerSettings] = useState(() => loadPlayerSettings());
@@ -204,14 +208,14 @@ export default function BaseVod(props) {
             </Box>
             {vod.prev && (
               <CustomWidthTooltip title="Previous">
-                <IconButton size="small" component="a" href={`/youtube/${vod.prev.id}`}>
+                <IconButton size="small" component="a" href={`/${pathPrefix}/${vod.prev.id}`}>
                   <NavigateBeforeIcon fontSize="small" />
                 </IconButton>
               </CustomWidthTooltip>
             )}
             {vod.next && (
               <CustomWidthTooltip title="Next">
-                <IconButton size="small" component="a" href={`/youtube/${vod.next.id}`}>
+                <IconButton size="small" component="a" href={`/${pathPrefix}/${vod.next.id}`}>
                   <NavigateNextIcon fontSize="small" />
                 </IconButton>
               </CustomWidthTooltip>
