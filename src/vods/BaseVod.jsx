@@ -6,6 +6,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
 import VodChapters from './VodChapters';
 import CustomWidthTooltip from '../utils/CustomToolTip';
 import { toHMS } from '../utils/helpers';
@@ -13,6 +14,8 @@ import YoutubePlayer from './YoutubePlayer';
 import CustomPlayer from './CustomPlayer';
 import { saveResumePosition } from '../utils/positionStorage';
 import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 export default function BaseVod(props) {
   const {
@@ -199,6 +202,20 @@ export default function BaseVod(props) {
                 </FormControl>
               )}
             </Box>
+            {vod.prev && (
+              <CustomWidthTooltip title="Previous">
+                <IconButton size="small" component="a" href={`/youtube/${vod.prev.id}`}>
+                  <NavigateBeforeIcon fontSize="small" />
+                </IconButton>
+              </CustomWidthTooltip>
+            )}
+            {vod.next && (
+              <CustomWidthTooltip title="Next">
+                <IconButton size="small" component="a" href={`/youtube/${vod.next.id}`}>
+                  <NavigateNextIcon fontSize="small" />
+                </IconButton>
+              </CustomWidthTooltip>
+            )}
           </Box>
         </Box>
       </Collapse>
