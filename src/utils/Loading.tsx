@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 
-export default function Loading({ logo }) {
+export default function Loading({ logo }: { logo?: string }) {
   const loadingLogo = logo || null;
 
   return (

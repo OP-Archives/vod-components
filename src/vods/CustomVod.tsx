@@ -1,34 +1,32 @@
-import { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import Divider from '@mui/material/Divider';
-import Loading from '../utils/Loading';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import Chat from './Chat';
+import type { VOD, PlayerState } from '../types';
 import { convertTimestamp } from '../utils/helpers';
-import BaseVod from './BaseVod';
+import Loading from '../utils/Loading';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
-import PropTypes from 'prop-types';
+import BaseVod from './BaseVod';
+import Chat from './Chat';
 
-CustomVod.propTypes = {
-  archiveApiBase: PropTypes.string.isRequired,
-  channel: PropTypes.string.isRequired,
-  logo: PropTypes.string.isRequired,
-  cdnBase: PropTypes.string,
-  twitchId: PropTypes.number.isRequired,
-};
-
-export default function CustomVod(props) {
+export default function CustomVod(props: {
+  archiveApiBase: string;
+  channel: string;
+  logo: string;
+  cdnBase?: string;
+  twitchId: number;
+}) {
   const { archiveApiBase, channel, logo, cdnBase, twitchId } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
-  const { vodId } = useParams();
-  const [vod, setVod] = useState(undefined);
-  const [timestamp, setTimestamp] = useState(undefined);
+  const { vodId } = useParams<{ vodId: string }>();
+  const [vod, setVod] = useState<VOD | undefined>(undefined);
+  const [timestamp, setTimestamp] = useState<number | undefined>(undefined);
   const [delay, setDelay] = useState(0);
   const [userChatDelay, setUserChatDelay] = useState(0);
-  const [playerState, setPlayerState] = useState(-1);
-  const playerRef = useRef(null);
+  const [playerState, setPlayerState] = useState<PlayerState>(-1);
+  const playerRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -59,7 +57,7 @@ export default function CustomVod(props) {
             }
           });
       } catch (e) {
-        if (e.name !== 'AbortError') {
+        if ((e as Error).name !== 'AbortError') {
           console.error(e);
         }
       }
@@ -92,18 +90,14 @@ export default function CustomVod(props) {
     }
   }, [vodId, location.search]);
 
-  // Handle Resume Positions depending on player state.
   useEffect(() => {
     if (playerState === -1 || !vodId || !playerRef.current) return;
 
     switch (playerState) {
-      // Player States: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
       case 0:
-        // Clear Resume Position when video has ended.
         clearResumePosition(vodId, 'vod_');
         break;
       case 2:
-        // Save Resume Position when video has paused.
         const currentTime = playerRef.current.currentTime;
         if (currentTime !== null && currentTime > 0) saveResumePosition(vodId, currentTime, 'vod_');
         break;
@@ -135,7 +129,7 @@ export default function CustomVod(props) {
         <Chat
           archiveApiBase={archiveApiBase}
           isPortrait={isPortrait}
-          vodId={vodId}
+          vodId={vodId!}
           playerRef={playerRef}
           delay={delay}
           userChatDelay={userChatDelay}

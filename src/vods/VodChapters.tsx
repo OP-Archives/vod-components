@@ -1,14 +1,25 @@
-import { useState, memo } from 'react';
 import Box from '@mui/material/Box';
-import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import humanize from 'humanize-duration';
+import { useState, memo } from 'react';
+import type { Chapter, VODUpload, PartInfo } from '../types';
 import { toSeconds, getImage } from '../utils/helpers';
 
-const VodChapters = memo(function VodChapters({
+interface VodChaptersProps {
+  chapters: Chapter[];
+  chapter: { name: string; image: string; start: number; duration: number; end: number } | null;
+  setPart?: (part: PartInfo) => void;
+  youtube?: VODUpload[];
+  setChapter: (ch: { name: string; image: string; start: number; duration: number; end: number } | null) => void;
+  setTimestamp?: (ts: number) => void;
+  isYoutubeVod?: boolean;
+}
+
+const VodChapters = memo<VodChaptersProps>(function VodChapters({
   chapters,
   chapter,
   setPart,
@@ -17,32 +28,32 @@ const VodChapters = memo(function VodChapters({
   setTimestamp,
   isYoutubeVod,
 }) {
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const handleClose = () => {
     setAnchorEl(null);
   };
 
-  const handleClick = (event) => {
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleChapterClick = (data) => {
+  const handleChapterClick = (data: Chapter) => {
     if (isYoutubeVod && youtube) {
       let part = 1;
       let timestamp = data?.start;
-      if (timestamp > 1) {
+      if (timestamp! > 1) {
         for (let data of youtube) {
-          if (data.duration > timestamp) {
+          if ((data.duration ?? 0) > timestamp!) {
             part = data?.part || 1;
             break;
           }
-          timestamp -= data.duration;
+          timestamp! -= data.duration ?? 0;
         }
       }
-      setPart({ part: part, timestamp: timestamp });
+      setPart?.({ part: part, timestamp: timestamp! });
     } else {
-      setTimestamp(data?.start || toSeconds(data.duration));
+      setTimestamp?.(data?.start || toSeconds(data.duration.toString()));
     }
     setChapter(data);
     setAnchorEl(null);
@@ -50,9 +61,9 @@ const VodChapters = memo(function VodChapters({
 
   return (
     <Box sx={{ pr: 1 }}>
-      <Tooltip title={chapter.name}>
+      <Tooltip title={chapter!.name}>
         <IconButton onClick={handleClick}>
-          <img alt="" src={getImage(chapter.image)} style={{ width: '40px', height: '53px' }} />
+          <img alt="" src={getImage(chapter!.image)} style={{ width: '40px', height: '53px' }} />
         </IconButton>
       </Tooltip>
       <Menu
@@ -66,8 +77,8 @@ const VodChapters = memo(function VodChapters({
           return (
             <MenuItem
               onClick={() => handleChapterClick(data)}
-              key={`${data?.gameId}-${data?.start}`}
-              selected={data.start === chapter.start}
+              key={`${data.name}-${data.start}`}
+              selected={data.start === chapter!.start}
             >
               <Box sx={{ display: 'flex' }}>
                 <Box sx={{ mr: 1 }}>

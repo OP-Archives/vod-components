@@ -1,4 +1,4 @@
-import './player.css';
+import './index.css';
 import 'simplebar-react/dist/simplebar.min.css';
 
 // Vods

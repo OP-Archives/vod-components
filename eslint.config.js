@@ -1,21 +1,22 @@
-import js from '@eslint/js';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
+import ts from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 import prettier from 'eslint-plugin-prettier';
 import globals from 'globals';
+import importX from 'eslint-plugin-import-x';
 
 export default [
-  js.configs.recommended,
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.ts', '**/*.tsx'],
+    plugins: {
+      'import-x': importX,
+      '@typescript-eslint': tsPlugin,
+      prettier,
+    },
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+      parser: ts,
       parserOptions: {
-        requireConfigFile: false,
-        babelOptions: {
-          presets: ['@babel/preset-react'],
-        },
         ecmaFeatures: {
           jsx: true,
         },
@@ -25,29 +26,22 @@ export default [
         ...globals.node,
       },
     },
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
-    plugins: {
-      react,
-      'react-hooks': reactHooks,
-      prettier,
-    },
     rules: {
-      ...react.configs.recommended.rules,
-      ...reactHooks.configs.recommended.rules,
-      'react/prop-types': 'off',
-      'react/react-in-jsx-scope': 'off',
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-      'react-hooks/refs': 'off',
-      'react-hooks/set-state-in-effect': 'off',
-      'no-case-declarations': 'off',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      ...tsPlugin.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'off',
       'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
       'prettier/prettier': 'error',
+      'import-x/no-duplicates': 'error',
+      'import-x/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          'newlines-between': 'never',
+          alphabetize: { order: 'asc', caseInsensitive: true },
+        },
+      ],
     },
   },
 ];

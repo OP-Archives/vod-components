@@ -2,11 +2,24 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import SimpleBar from 'simplebar-react';
+import type { Comment } from '../../types';
 
-export default function ChatMessages(props) {
+interface ChatMessagesProps {
+  comments: Comment[] | React.MutableRefObject<Comment[]>;
+  shownMessages: React.ReactElement[];
+  scrolling: boolean;
+  scrollToBottom: () => void;
+  chatRef: React.MutableRefObject<HTMLElement | null>;
+  handleScroll: () => void;
+  handleImageLoad: () => void;
+}
+
+export default function ChatMessages(props: ChatMessagesProps) {
   const { comments, shownMessages, scrolling, scrollToBottom, chatRef, handleScroll, handleImageLoad } = props;
 
-  if (comments && comments.length === 0) {
+  const commentsArray = Array.isArray(comments) ? comments : comments.current;
+
+  if (commentsArray && commentsArray.length === 0) {
     return (
       <Box
         sx={{

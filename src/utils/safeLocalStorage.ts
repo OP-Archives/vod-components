@@ -1,5 +1,5 @@
 export const safeLocalStorage = {
-  getItem(key) {
+  getItem(key: string) {
     try {
       return localStorage.getItem(key);
     } catch (error) {
@@ -7,14 +7,14 @@ export const safeLocalStorage = {
       return null;
     }
   },
-  setItem(key, value) {
+  setItem(key: string, value: string) {
     try {
       localStorage.setItem(key, value);
     } catch (error) {
       console.warn('localStorage write failed:', error);
     }
   },
-  removeItem(key) {
+  removeItem(key: string) {
     try {
       localStorage.removeItem(key);
     } catch (error) {

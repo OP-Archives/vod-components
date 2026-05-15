@@ -1,30 +1,50 @@
-import { useState, useEffect, useRef } from 'react';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseIcon from '@mui/icons-material/Pause';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
+import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import PauseIcon from '@mui/icons-material/Pause';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import SettingsIcon from '@mui/icons-material/Settings';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import WidthFullIcon from '@mui/icons-material/WidthFull';
 import WidthNormalIcon from '@mui/icons-material/WidthNormal';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import SettingsIcon from '@mui/icons-material/Settings';
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-import Slider from '@mui/material/Slider';
+import Box from '@mui/material/Box';
+import Fade from '@mui/material/Fade';
+import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Fade from '@mui/material/Fade';
+import Slider from '@mui/material/Slider';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import { useState, useEffect, useRef } from 'react';
 import { formatTime } from '../utils/helpers';
 
 const CONTROL_BAR_HEIGHT = 60;
 const AUTO_HIDE_DELAY = 3000;
 
-export default function PlayerControls(props) {
+interface PlayerControlsProps {
+  isPlaying: boolean;
+  volume: number;
+  isMuted: boolean;
+  currentTime: number;
+  duration: number;
+  isFullscreen: boolean;
+  onTogglePlayPause: () => void;
+  onVolumeChange: (event: Event, newValue: number | number[]) => void;
+  onSeekChange: (event: Event, newValue: number | number[]) => void;
+  onToggleMute: () => void;
+  onToggleFullscreen: () => void;
+  playerContainerRef: React.RefObject<HTMLDivElement | null>;
+  theatreMode: boolean;
+  onToggleTheatreMode: () => void;
+  playbackSpeed?: number;
+  onPlaybackSpeedChange?: (speed: number) => void;
+  onCopyTimestamp?: (time: number) => void;
+}
+
+export default function PlayerControls(props: PlayerControlsProps) {
   const {
     isPlaying,
     volume,
@@ -47,17 +67,16 @@ export default function PlayerControls(props) {
 
   const [showControls, setShowControls] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [settingsAnchorEl, setSettingsAnchorEl] = useState(null);
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLElement | null>(null);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
-  const autoHideTimerRef = useRef(null);
-  const closeSettingsTimerRef = useRef(null);
+  const autoHideTimerRef = useRef<number | null>(null);
+  const closeSettingsTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleMouseMove = () => {
       setShowControls(true);
       if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
 
-      // Only set the auto-hide timer if the menu is NOT open
       if (!isMenuOpen) {
         autoHideTimerRef.current = setTimeout(() => {
           if (isPlaying) {
@@ -68,7 +87,6 @@ export default function PlayerControls(props) {
     };
 
     const handleMouseLeave = () => {
-      // Don't hide the controls on mouse leave if the settings menu is open
       if (isPlaying && !isMenuOpen) {
         setShowControls(false);
       }
@@ -81,8 +99,6 @@ export default function PlayerControls(props) {
       playerContainer.addEventListener('click', handleMouseMove);
     }
 
-    // Force controls to stay visible when menu is open,
-    // and restart the auto-hide timer automatically when it closes.
     if (isMenuOpen) {
       if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
       setShowControls(true);
@@ -114,10 +130,10 @@ export default function PlayerControls(props) {
     if (onCopyTimestamp) {
       onCopyTimestamp(currentTime);
     }
-    handleCloseSettings(); // Use the new unified close function
+    handleCloseSettings();
   };
 
-  const handlePlaybackSpeedChange = (speed) => {
+  const handlePlaybackSpeedChange = (speed: number) => {
     if (onPlaybackSpeedChange) {
       onPlaybackSpeedChange(speed);
     }
@@ -198,7 +214,7 @@ export default function PlayerControls(props) {
               </IconButton>
             </Tooltip>
             <Slider
-              value={isMuted ? 0 : volume * 100}
+              value={isMuted ? 0 : volume}
               onChange={onVolumeChange}
               size="small"
               sx={{

@@ -1,36 +1,29 @@
-import { useEffect, useState, useRef } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import Divider from '@mui/material/Divider';
-import Loading from '../utils/Loading';
-import { useLocation, useParams } from 'react-router-dom';
-import Chat from './Chat';
-import BaseVod from './BaseVod';
-import PropTypes from 'prop-types';
-import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useEffect, useState, useRef, ChangeEvent } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
+import type { VOD, GameEntry, PartInfo, PlayerState } from '../types';
+import Loading from '../utils/Loading';
+import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
+import BaseVod from './BaseVod';
+import Chat from './Chat';
 
-Games.propTypes = {
-  archiveApiBase: PropTypes.string.isRequired,
-  channel: PropTypes.string.isRequired,
-  logo: PropTypes.string.isRequired,
-  twitchId: PropTypes.number.isRequired,
-};
-
-export default function Games(props) {
+export default function Games(props: { archiveApiBase: string; channel: string; logo: string; twitchId: number }) {
   const { archiveApiBase, channel, logo, twitchId } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
-  const { vodId } = useParams();
-  const [vod, setVod] = useState(undefined);
-  const [games, setGames] = useState(undefined);
-  const [part, setPart] = useState(undefined);
+  const { vodId } = useParams<{ vodId: string }>();
+  const [vod, setVod] = useState<VOD | undefined>(undefined);
+  const [games, setGames] = useState<GameEntry[] | undefined>(undefined);
+  const [part, setPart] = useState<PartInfo | null | undefined>(undefined);
   const [userChatDelay, setUserChatDelay] = useState(0);
-  const [playerState, setPlayerState] = useState(-1);
-  const playerRef = useRef(null);
+  const [playerState, setPlayerState] = useState<PlayerState>(-1);
+  const playerRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -75,9 +68,7 @@ export default function Games(props) {
     }
 
     const search = new URLSearchParams(location.search);
-
-    //Check if game id is in query
-    const game_id = search.get('game_id') !== null ? parseInt(search.get('game_id')) : undefined;
+    const game_id = search.get('game_id') !== null ? parseInt(search.get('game_id')!) : undefined;
     const index = vod.games.findIndex((game) => parseInt(game.id) === game_id);
 
     let savedTimestamp = 0;
@@ -92,22 +83,20 @@ export default function Games(props) {
     return;
   }, [vod, location.search]);
 
-  // Handle Resume Positions depending on player state.
   useEffect(() => {
     if (playerState === -1 || !playerRef.current) return;
 
-    const currentGame = games?.[part.part - 1];
+    const currentGame = games?.[part!.part - 1];
 
     switch (playerState) {
-      // Player States: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
       case 0:
-        // Clear Resume Position when video has ended.
-        clearResumePosition(currentGame.id, 'game_');
+        clearResumePosition(currentGame!.id, 'game_');
         break;
       case 2:
-        const currentTime = playerRef.current?.getCurrentTime();
-        if (currentTime !== null && currentTime > 0) {
-          saveResumePosition(currentGame.id, currentTime, 'game_');
+        const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
+        const currentTime = ytP?.getCurrentTime?.() ?? 0;
+        if (currentTime > 0) {
+          saveResumePosition(currentGame!.id, currentTime, 'game_');
         }
         break;
       default:
@@ -116,9 +105,9 @@ export default function Games(props) {
     return;
   }, [playerState, games, playerRef, part]);
 
-  const handlePartChange = (evt) => {
-    const tmpPart = evt.target.value + 1;
-    const selectedGameId = games[tmpPart - 1].id;
+  const handlePartChange = (evt: ChangeEvent<HTMLSelectElement>) => {
+    const tmpPart = parseInt(evt.target.value) + 1;
+    const selectedGameId = games![tmpPart - 1].id;
     const savedPosition = getResumePosition(selectedGameId, 'game_');
     let savedTimestamp = 0;
     if (savedPosition !== null) {
@@ -189,10 +178,10 @@ export default function Games(props) {
         <Chat
           archiveApiBase={archiveApiBase}
           isPortrait={isPortrait}
-          vodId={vodId}
+          vodId={vodId!}
           playerRef={playerRef}
           userChatDelay={userChatDelay}
-          part={part}
+          part={part ?? null}
           setPart={setPart}
           games={games}
           setUserChatDelay={setUserChatDelay}

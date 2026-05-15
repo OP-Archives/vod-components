@@ -15,7 +15,7 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/index.js'),
+      entry: path.resolve(__dirname, 'src/index.ts'),
       formats: ['es'],
       fileName: (format) => `index.${format}.js`,
     },
@@ -32,13 +32,12 @@ export default defineConfig({
           '@emotion/styled',
           'simplebar-react',
           'react-router-dom',
-          'prop-types',
         ];
         return externals.some((pkg) => id === pkg || id.startsWith(pkg + '/'));
       },
       output: {
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name && assetInfo.name.endsWith('.css')) return 'player.css';
+          if (assetInfo.name && assetInfo.name.endsWith('.css')) return 'index.css';
           return 'assets/[name]-[hash][extname]';
         },
       },

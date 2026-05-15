@@ -1,18 +1,31 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
-import Alert from '@mui/material/Alert';
-import Paper from '@mui/material/Paper';
-import PlayerControls from './PlayerControls';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import Hls from 'hls.js';
-import { sleep } from '../utils/helpers';
-import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import canAutoplay from 'can-autoplay';
+import Hls from 'hls.js';
+import { useRef, useEffect, useState, useCallback, ChangeEvent } from 'react';
+import type { VOD, PlayerSource, PlayerState, PlayerSettings } from '../types';
+import { sleep } from '../utils/helpers';
+import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
+import PlayerControls from './PlayerControls';
 
-// Optimized HLS configuration
-const hlsConfig = {
+interface HlsConfig {
+  enableWorker: boolean;
+  lowLatencyMode: boolean;
+  backBufferLength: number;
+  maxBufferLength: number;
+  maxMaxBufferLength: number;
+  maxBufferSize: number;
+  maxBufferHole: number;
+  liveSyncDurationCount: number;
+  liveDurationInfinity: boolean;
+  debug: boolean;
+}
+
+const hlsConfig: HlsConfig = {
   enableWorker: true,
   lowLatencyMode: false,
   backBufferLength: 90,
@@ -25,7 +38,24 @@ const hlsConfig = {
   debug: false,
 };
 
-export default function Player(props) {
+interface PlayerProps {
+  setCurrentTime: (time: number) => void;
+  type?: string;
+  vod: VOD;
+  timestamp?: number;
+  setDelay?: (delay: number) => void;
+  setPlayerState: (state: PlayerState) => void;
+  cdnBase?: string;
+  defaultVolume: number;
+  defaultMuted: boolean;
+  theatreMode: boolean;
+  setTheatreMode: (v: boolean) => void;
+  copyTimestamp: () => void;
+  playerRef: React.RefObject<HTMLVideoElement | null>;
+  onUpdateSettings?: (settings: PlayerSettings) => void;
+}
+
+export default function Player(props: PlayerProps) {
   const {
     setCurrentTime,
     type,
@@ -40,12 +70,13 @@ export default function Player(props) {
     setTheatreMode,
     copyTimestamp,
     playerRef,
+    onUpdateSettings,
   } = props;
-  const hlsInstance = useRef(null);
-  const playerContainerRef = useRef(null);
-  const timeIntervalRef = useRef(null);
-  const [source, setSource] = useState(undefined);
-  const [fileError, setFileError] = useState(undefined);
+  const hlsInstance = useRef<Hls | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement | null>(null);
+  const timeIntervalRef = useRef<number | null>(null);
+  const [source, setSource] = useState<PlayerSource>(undefined);
+  const [fileError, setFileError] = useState<string | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(defaultVolume || 100);
   const [isMuted, setIsMuted] = useState(defaultMuted || false);
@@ -67,10 +98,13 @@ export default function Player(props) {
     if (settings) {
       setVolume(settings.volume ?? 100);
       setIsMuted(settings.muted ?? false);
+      if (playerRef.current) {
+        playerRef.current.volume = (settings.volume ?? 100) / 100;
+        playerRef.current.muted = settings.muted ?? false;
+      }
     }
   }, []);
 
-  // HLS streaming with MP4 fallback
   useEffect(() => {
     if (type === 'cdn') {
       const hlsUrl = `${cdnBase}/videos/${vod.platform_vod_id}/hls/${vod.platform_vod_id}.m3u8`;
@@ -79,25 +113,24 @@ export default function Player(props) {
       if (Hls.isSupported()) {
         hlsInstance.current = new Hls(hlsConfig);
         hlsInstance.current.loadSource(hlsUrl);
-        hlsInstance.current.attachMedia(playerRef.current);
+        hlsInstance.current.attachMedia(playerRef.current!);
 
         hlsInstance.current.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
               case Hls.ErrorTypes.MEDIA_ERROR:
-                hlsInstance.current.destroy();
+                hlsInstance.current!.destroy();
                 break;
               default:
-                hlsInstance.current.destroy();
+                hlsInstance.current!.destroy();
                 setFileError('Failed to load video');
                 break;
             }
           }
         });
-      } else if (playerRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-        // Native HLS (Safari)
-        playerRef.current.src = hlsUrl;
+      } else if (playerRef.current!.canPlayType('application/vnd.apple.mpegurl')) {
+        playerRef.current!.src = hlsUrl;
       }
     }
 
@@ -118,15 +151,14 @@ export default function Player(props) {
     timeIntervalRef.current = setInterval(timeUpdate, 1000);
   }, [timeUpdate]);
 
-  const fileChange = (evt) => {
-    setFileError(null);
-    const file = evt.target.files[0];
+  const fileChange = (evt: ChangeEvent<HTMLInputElement>) => {
+    setFileError(undefined);
+    const file = evt.target.files![0];
 
     if (!file || !file.type.match(/video\//)) {
       return setFileError('Please select a valid video file');
     }
 
-    // Revoke previous object URL
     if (source && typeof source === 'object' && source.objectUrl) {
       URL.revokeObjectURL(source.objectUrl);
     }
@@ -135,7 +167,6 @@ export default function Player(props) {
     setSource({ src: objectUrl, type: file.type, objectUrl });
   };
 
-  // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       if (source && typeof source === 'object' && source.objectUrl) {
@@ -148,10 +179,11 @@ export default function Player(props) {
     if (!playerRef.current) return;
 
     if (!document.fullscreenElement && !document.webkitIsFullScreen) {
-      if (playerContainerRef.current.requestFullscreen) {
-        playerContainerRef.current.requestFullscreen();
-      } else if (playerContainerRef.current.webkitRequestFullscreen) {
-        playerContainerRef.current.webkitRequestFullscreen();
+      const el = playerContainerRef.current! as HTMLElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
       }
 
       if (isTouchDevice) {
@@ -185,8 +217,11 @@ export default function Player(props) {
   }, [playerRef]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLElement &&
+        (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
+      ) {
         return;
       }
 
@@ -228,50 +263,54 @@ export default function Player(props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [playerRef, toggleFullscreen, toggleMute, togglePlayPause]);
 
-  const handleVolumeChange = (event, newValue) => {
-    if (!playerRef.current) return;
-    playerRef.current.muted = newValue === 0 ? true : false;
-    playerRef.current.volume = newValue / 100;
-  };
+  const handleVolumeChange = useCallback(
+    (event: Event, newValue: number | number[]) => {
+      if (!playerRef.current) return;
+      const vol = typeof newValue === 'number' ? newValue : newValue[0];
+      playerRef.current.muted = vol === 0 ? true : false;
+      playerRef.current.volume = vol / 100;
+      savePlayerSettings({ volume: vol, muted: playerRef.current.muted });
+      setVolume(vol);
+      setIsMuted(playerRef.current.muted);
+      if (onUpdateSettings) onUpdateSettings({ volume: vol, muted: playerRef.current.muted });
+    },
+    [playerRef, onUpdateSettings]
+  );
 
-  const playerOnVolumeChange = () => {
-    savePlayerSettings({ volume: playerRef.current.volume, muted: playerRef.current.muted });
-    setVolume(playerRef.current.volume);
-    setIsMuted(playerRef.current.muted);
-  };
-
-  const handleSeekChange = (event, newValue) => {
+  const handleSeekChange = (event: Event, newValue: number | number[]) => {
+    const seekValue = typeof newValue === 'number' ? newValue : newValue[0];
     if (playerRef.current) {
-      playerRef.current.currentTime = newValue;
-      setCurrentTimeState(newValue);
+      playerRef.current.currentTime = seekValue;
+      setCurrentTimeState(seekValue);
     }
   };
 
-  const handlePlaybackSpeedChange = (speed) => {
+  const handlePlaybackSpeedChange = (speed: number) => {
     if (!playerRef.current) return;
     setPlaybackSpeed(speed);
     playerRef.current.playbackRate = speed;
   };
 
-  const handleError = (_e) => {
+  const handleError = (_e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = playerRef.current;
     if (!video || !video.error) return;
 
-    switch (video.error.code) {
-      case video.error.MEDIA_ERR_FORMAT:
+    const code = video.error.code;
+    switch (code) {
+      case 1:
         setFileError('This video format is not supported by your browser');
         break;
-      case video.error.MEDIA_ERR_DECODE:
+      case 2:
         setFileError('Failed to decode the video file - it may be corrupted or use an unsupported codec');
         break;
-      case video.error.MEDIA_ERR_NETWORK:
+      case 3:
         setFileError('Network error while loading the video - please check your connection');
         break;
-      case video.error.MEDIA_ERR_ABORTED:
+      case 4:
         setFileError('Video loading was aborted');
         break;
       default:
-        setFileError(`An error occurred while playing the video (Error code: ${video.error.code})`);
+        setFileError(`An error occurred while playing the video (Error code: ${code})`);
     }
   };
 
@@ -300,25 +339,22 @@ export default function Player(props) {
   };
 
   const handleLoadedMetadata = () => {
-    const duration = playerRef.current.duration;
-    setDuration(duration);
+    const dur = playerRef.current!.duration;
+    setDuration(dur);
 
     const vodDuration = vod.duration;
-    const tmpDelay = vodDuration - duration < 0 ? 0 : vodDuration - duration;
-    setDelay(tmpDelay);
+    const tmpDelay = vodDuration - dur < 0 ? 0 : vodDuration - dur;
+    setDelay?.(tmpDelay);
   };
 
-  // Autoplay with mute fallback
   useEffect(() => {
     if (source && playerRef.current) {
-      canAutoplay.video({ inline: true }).then(async (obj) => {
-        // Guard against unmount between promise resolve and this callback
+      canAutoplay.video({ inline: true }).then(async (obj: { result: boolean }) => {
         if (!playerRef.current) return;
 
         if (obj.result) return (playerRef.current.muted = isMuted);
 
         let mutedAutoplay = await canAutoplay.video({ muted: true, inline: true });
-        // Guard against unmount between first and second promise resolve
         if (!playerRef.current) return;
 
         if (mutedAutoplay.result) return (playerRef.current.muted = true);
@@ -331,15 +367,14 @@ export default function Player(props) {
   useEffect(() => {
     if (!source || !playerRef.current) return;
 
-    // Handle manual file uploads and CDN MP4 fallback
     if (type === 'manual') {
-      playerRef.current.src = source.src;
+      playerRef.current.src = typeof source === 'string' ? source : source.src;
     } else if (typeof source === 'string' && source.endsWith('.mp4')) {
       playerRef.current.src = source;
     }
 
     const set = async () => {
-      let playerDuration = playerRef.current.duration;
+      let playerDuration = playerRef.current!.duration;
       while (playerRef.current && (isNaN(playerDuration) || playerDuration === 0)) {
         playerDuration = playerRef.current.duration;
         await sleep(100);
@@ -347,7 +382,7 @@ export default function Player(props) {
       if (!playerRef.current) return;
       const vodDuration = vod.duration;
       const tmpDelay = vodDuration - playerDuration < 0 ? 0 : vodDuration - playerDuration;
-      setDelay(tmpDelay);
+      setDelay?.(tmpDelay);
       setDuration(playerDuration);
     };
 
@@ -397,13 +432,12 @@ export default function Player(props) {
         }}
         onDoubleClick={toggleFullscreen}
       >
-        {/* Native video element */}
         <video
           ref={playerRef}
           playsInline
           autoPlay
-          tabIndex="-1"
-          poster={vod.thumbnail_url}
+          tabIndex={-1}
+          poster={vod.vod_uploads[0]?.thumbnail_url || undefined}
           preload="auto"
           onPlay={handlePlay}
           onPause={handlePause}
@@ -413,11 +447,9 @@ export default function Player(props) {
           onError={handleError}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
-          onVolumeChange={playerOnVolumeChange}
           style={{ height: '100%', width: '100%' }}
         />
 
-        {/* Play overlay */}
         {!isPlaying && (
           <Box
             onClick={togglePlayPause}
@@ -438,7 +470,6 @@ export default function Player(props) {
           </Box>
         )}
 
-        {/* Controls */}
         <PlayerControls
           isPlaying={isPlaying}
           volume={volume}

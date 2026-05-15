@@ -1,37 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import Divider from '@mui/material/Divider';
-import Loading from '../utils/Loading';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useEffect, useRef, useState, ChangeEvent } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import NotFound from '../utils/NotFound';
-import Chat from './Chat';
+import type { VOD, VODUpload, PartInfo, PlayerState } from '../types';
 import { convertTimestamp } from '../utils/helpers';
-import BaseVod from './BaseVod';
+import Loading from '../utils/Loading';
+import NotFound from '../utils/NotFound';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
-import PropTypes from 'prop-types';
+import BaseVod from './BaseVod';
+import Chat from './Chat';
 
-YoutubeVod.propTypes = {
-  type: PropTypes.string,
-  archiveApiBase: PropTypes.string.isRequired,
-  channel: PropTypes.string.isRequired,
-  defaultDelay: PropTypes.number,
-  logo: PropTypes.string.isRequired,
-  twitchId: PropTypes.number.isRequired,
-};
-
-export default function YoutubeVod(props) {
+export default function YoutubeVod(props: {
+  type?: string;
+  archiveApiBase: string;
+  channel: string;
+  defaultDelay?: number;
+  logo: string;
+  twitchId: number;
+  origin?: string;
+}) {
   const { type, archiveApiBase, channel, defaultDelay, logo, twitchId, origin } = props;
   const location = useLocation();
   const isPortrait = useMediaQuery('(orientation: portrait)');
-  const { vodId } = useParams();
-  const [vod, setVod] = useState(undefined);
-  const [youtube, setYoutube] = useState(undefined);
-  const [part, setPart] = useState(undefined);
-  const [delay, setDelay] = useState(undefined);
+  const { vodId } = useParams<{ vodId: string }>();
+  const [vod, setVod] = useState<VOD | undefined>(undefined);
+  const [youtube, setYoutube] = useState<VODUpload[] | undefined>(undefined);
+  const [part, setPart] = useState<PartInfo | null>(null);
+  const [delay, setDelay] = useState<number | undefined>(undefined);
   const [userChatDelay, setUserChatDelay] = useState(0);
-  const [playerState, setPlayerState] = useState(-1);
-  const playerRef = useRef(null);
+  const [playerState, setPlayerState] = useState<PlayerState>(-1);
+  const playerRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -55,10 +54,10 @@ export default function YoutubeVod(props) {
         .then((data) => {
           setVod(data);
           if (!type) {
-            const useType = data.vod_uploads.some((youtube) => youtube.type === 'live') ? 'live' : 'vod';
-            setYoutube(data.vod_uploads.filter((data) => data.type === useType));
+            const useType = data.vod_uploads.some((youtube: VODUpload) => youtube.type === 'live') ? 'live' : 'vod';
+            setYoutube(data.vod_uploads.filter((data: VODUpload) => data.type === useType));
           } else {
-            setYoutube(data.vod_uploads.filter((data) => data.type === type));
+            setYoutube(data.vod_uploads.filter((data: VODUpload) => data.type === type));
           }
         })
         .catch((e) => {
@@ -89,11 +88,11 @@ export default function YoutubeVod(props) {
       }
     }
     for (const data of youtube) {
-      if (data.duration > timestamp) {
+      if (data.duration !== null && data.duration > timestamp) {
         tmpPart = data.part ?? youtube.indexOf(data) + 1;
         break;
       }
-      timestamp -= data.duration;
+      timestamp -= data.duration ?? 0;
     }
     setPart({ part: tmpPart, timestamp });
     return;
@@ -114,25 +113,23 @@ export default function YoutubeVod(props) {
     return;
   }, [youtube, vod, defaultDelay]);
 
-  // Handle Resume Positions depending on player state.
   useEffect(() => {
     if (playerState === -1 || !vodId || !playerRef.current || !youtube || !part) return;
 
     switch (playerState) {
-      // Player States: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
       case 0:
-        // Clear Resume Position only when the last part has ended
         if (part.part === youtube.length) {
           clearResumePosition(vodId, 'vod_');
         }
         break;
       case 2:
-        let currentTime = playerRef.current?.getCurrentTime();
-        if (currentTime !== null && currentTime > 0) {
+        const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
+        let currentTime = ytP?.getCurrentTime?.() ?? 0;
+        if (currentTime > 0) {
           if (youtube) {
             for (let video of youtube) {
-              if (video.part >= part.part) break;
-              currentTime += video.duration;
+              if ((video.part ?? 0) >= part.part) break;
+              currentTime += video.duration ?? 0;
             }
           }
           saveResumePosition(vodId, currentTime, 'vod_');
@@ -144,9 +141,9 @@ export default function YoutubeVod(props) {
     return;
   }, [playerState, vodId, playerRef, youtube, part]);
 
-  const handlePartChange = (evt) => {
+  const handlePartChange = (evt: ChangeEvent<HTMLSelectElement>) => {
     const tmpPart = evt.target.value + 1;
-    setPart({ part: tmpPart, duration: 0 });
+    setPart({ part: parseInt(tmpPart), timestamp: 0 });
   };
 
   useEffect(() => {
@@ -154,8 +151,7 @@ export default function YoutubeVod(props) {
     console.info(`Chat Delay: ${userChatDelay + delay} seconds`);
   }, [userChatDelay, delay]);
 
-  if (vod === undefined || part === undefined || delay === undefined || youtube === undefined)
-    return <Loading logo={logo} />;
+  if (vod === undefined || !part || delay === undefined || youtube === undefined) return <Loading logo={logo} />;
 
   if (youtube.length === 0) return <NotFound channel={channel} logo={logo} />;
 
@@ -181,7 +177,7 @@ export default function YoutubeVod(props) {
         <Chat
           archiveApiBase={archiveApiBase}
           isPortrait={isPortrait}
-          vodId={vodId}
+          vodId={vodId!}
           playerRef={playerRef}
           delay={delay}
           userChatDelay={userChatDelay}

@@ -1,8 +1,12 @@
-import Tooltip from '@mui/material/Tooltip';
 import { styled } from '@mui/material/styles';
-import { tooltipClasses } from '@mui/material/Tooltip';
+import Tooltip, { tooltipClasses } from '@mui/material/Tooltip';
+import type { TooltipProps } from '@mui/material/Tooltip';
 
-const MessageTooltip = styled(({ className, ...props }) => (
+interface MessageTooltipProps extends Omit<TooltipProps, 'title'> {
+  title: React.ReactNode;
+}
+
+const MessageTooltip = styled(({ className, ...props }: MessageTooltipProps) => (
   <Tooltip {...props} slotProps={{ popper: { disablePortal: true } }} classes={{ popper: className }} />
 ))(() => ({
   [`& .${tooltipClasses.tooltip}`]: {

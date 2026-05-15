@@ -1,11 +1,18 @@
-import Box from '@mui/material/Box';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SettingsIcon from '@mui/icons-material/Settings';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 
-export default function ChatHeader(props) {
+interface ChatHeaderProps {
+  isPortrait: boolean;
+  showChat: boolean;
+  setShowChat: (v: boolean) => void;
+  setShowModal: (v: boolean) => void;
+}
+
+export default function ChatHeader(props: ChatHeaderProps) {
   const { isPortrait, showChat, setShowChat, setShowModal } = props;
 
   return (

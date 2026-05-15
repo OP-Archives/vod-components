@@ -1,18 +1,29 @@
-import { useState } from 'react';
-import { safeLocalStorage } from '../../utils/safeLocalStorage';
 import Box from '@mui/material/Box';
-import Modal from '@mui/material/Modal';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
+import InputAdornment from '@mui/material/InputAdornment';
+import Modal from '@mui/material/Modal';
 import Slider from '@mui/material/Slider';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useDebouncedCallback } from '../../utils/debounceHelper';
+import { safeLocalStorage } from '../../utils/safeLocalStorage';
 
-export default function ChatSettingsModal(props) {
+interface ChatSettingsModalProps {
+  userChatDelay: number;
+  setUserChatDelay: (v: number) => void;
+  showModal: boolean;
+  setShowModal: (v: boolean) => void;
+  showTimestamp: boolean;
+  setShowTimestamp: (v: boolean) => void;
+  chatWidth: number | undefined;
+  setChatWidth: (v: number | undefined) => void;
+}
+
+export default function ChatSettingsModal(props: ChatSettingsModalProps) {
   const {
     userChatDelay,
     setUserChatDelay,
@@ -23,18 +34,33 @@ export default function ChatSettingsModal(props) {
     chatWidth,
     setChatWidth,
   } = props;
-  const [filterWords, setFilterWords] = useState([]);
+  const [filterWords, setFilterWords] = useState<string[]>([]);
 
-  // Debounce delay for chat delay input to prevent excessive state updates while typing
-  const debouncedDelayChange = useDebouncedCallback((value) => {
+  useEffect(() => {
+    if (showModal) {
+      const savedSettings = safeLocalStorage.getItem('chatSettings');
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings);
+          if (settings.filterWords && Array.isArray(settings.filterWords)) {
+            setFilterWords(settings.filterWords as string[]);
+          }
+        } catch (e) {
+          console.error('Failed to parse chat settings from localStorage', e);
+        }
+      }
+    }
+  }, [showModal]);
+
+  const debouncedDelayChange = useDebouncedCallback((value: unknown) => {
     if (!isNaN(Number(value))) {
       setUserChatDelay(Number(value));
     }
   }, 300);
 
-  const saveSetting = (key, value) => {
+  const saveSetting = (key: string, value: unknown) => {
     const savedSettings = safeLocalStorage.getItem('chatSettings');
-    let settings = {};
+    let settings: Record<string, unknown> = {};
     if (savedSettings) {
       try {
         settings = JSON.parse(savedSettings);
@@ -46,11 +72,13 @@ export default function ChatSettingsModal(props) {
     safeLocalStorage.setItem('chatSettings', JSON.stringify(settings));
   };
 
-  // Debounce save to avoid excessive localStorage writes
-  const debouncedSaveSetting = useDebouncedCallback(saveSetting, 500);
+  const debouncedSaveSetting = useDebouncedCallback((...args: unknown[]) => {
+    saveSetting(args[0] as string, args[1]);
+  }, 500);
 
   const handleAddWord = () => {
-    const input = document.getElementById('filter-word-input');
+    const input = document.getElementById('filter-word-input') as HTMLInputElement | null;
+    if (!input) return;
     const word = input.value.trim();
     if (word && !filterWords.includes(word)) {
       setFilterWords([...filterWords, word]);
@@ -59,7 +87,7 @@ export default function ChatSettingsModal(props) {
     }
   };
 
-  const handleRemoveWord = (wordToRemove) => {
+  const handleRemoveWord = (wordToRemove: string) => {
     setFilterWords(filterWords.filter((word) => word !== wordToRemove));
     debouncedSaveSetting(
       'filterWords',
@@ -96,9 +124,9 @@ export default function ChatSettingsModal(props) {
               fullWidth
               label="Chat Delay"
               size="small"
-              onChange={(evt) => debouncedDelayChange(evt.target.value)}
-              defaultValue={userChatDelay}
-              onFocus={(evt) => evt.target.select()}
+              value={userChatDelay}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => debouncedDelayChange(evt.target.value)}
+              onFocus={(evt: React.FocusEvent<HTMLInputElement>) => evt.target.select()}
             />
           </Box>
 
@@ -108,17 +136,18 @@ export default function ChatSettingsModal(props) {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
               <Slider
-                disabled={window.innerWidth - 400 <= 150}
+                disabled={typeof window !== 'undefined' && window.innerWidth - 400 <= 150}
                 value={chatWidth}
-                onChange={(e, newValue) => {
-                  setChatWidth(newValue);
-                  debouncedSaveSetting('chatWidth', newValue);
+                onChange={(e: Event, newValue: number | number[]) => {
+                  const num = typeof newValue === 'number' ? newValue : undefined;
+                  setChatWidth(num);
+                  debouncedSaveSetting('chatWidth', num);
                 }}
                 min={150}
-                max={Math.min(window.innerWidth - 400, 800)}
+                max={typeof window !== 'undefined' ? Math.min(window.innerWidth - 400, 800) : 800}
                 step={10}
                 valueLabelDisplay="auto"
-                valueLabelFormat={(value) => `${value}px`}
+                valueLabelFormat={(value: number) => `${value}px`}
                 sx={{ width: '100%' }}
               />
             </Box>
@@ -134,7 +163,7 @@ export default function ChatSettingsModal(props) {
                 fullWidth
                 label="Add word to filter"
                 size="small"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddWord()}
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleAddWord()}
               />
               <Button variant="outlined" sx={{ ml: 1 }} onClick={handleAddWord}>
                 Add

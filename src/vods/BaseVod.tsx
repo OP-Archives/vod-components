@@ -1,31 +1,54 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Collapse from '@mui/material/Collapse';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import IconButton from '@mui/material/IconButton';
-import VodChapters from './VodChapters';
-import CustomWidthTooltip from '../utils/CustomToolTip';
-import { toHMS } from '../utils/helpers';
-import YoutubePlayer from './YoutubePlayer';
-import CustomPlayer from './CustomPlayer';
-import { saveResumePosition } from '../utils/positionStorage';
-import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import Box from '@mui/material/Box';
+import Collapse from '@mui/material/Collapse';
+import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Typography from '@mui/material/Typography';
+import { useEffect, useState, ChangeEvent, RefObject } from 'react';
+import { useLocation } from 'react-router-dom';
+import type { VOD, VODUpload, GameEntry, PartInfo, PlayerState, PlayerSettings } from '../types';
+import CustomWidthTooltip from '../utils/CustomToolTip';
+import { toHMS } from '../utils/helpers';
+import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
+import { saveResumePosition } from '../utils/positionStorage';
+import CustomPlayer from './CustomPlayer';
+import VodChapters from './VodChapters';
+import YoutubePlayer from './YoutubePlayer';
 
-export default function BaseVod(props) {
+interface BaseVodProps {
+  origin?: string;
+  isYoutubeVod?: boolean;
+  youtube?: VODUpload[];
+  handlePartChange?: (evt: ChangeEvent<HTMLSelectElement>) => void;
+  playerRef: RefObject<HTMLVideoElement | null>;
+  part?: PartInfo | null;
+  setPart?: (part: PartInfo | null) => void;
+  vod: VOD | undefined;
+  type?: string;
+  setDelay?: (delay: number) => void;
+  timestamp?: number;
+  setTimestamp?: (ts: number) => void;
+  setPlayerState: (state: PlayerState) => void;
+  games?: GameEntry[];
+  cdnBase?: string;
+  logo: string;
+  archiveApiBase: string;
+  channel: string;
+  twitchId: number;
+}
+
+export default function BaseVod(props: BaseVodProps) {
   const {
     origin,
     isYoutubeVod,
     youtube,
     handlePartChange,
     playerRef,
-    part,
+    part: partValue,
     setPart,
     vod,
     type,
@@ -36,16 +59,20 @@ export default function BaseVod(props) {
     games,
     cdnBase,
   } = props;
+  const part = partValue ?? null;
   const location = useLocation();
   const pathPrefix = location.pathname.split('/')[1];
 
-  const [chapter, setChapter] = useState(undefined);
-  const [currentTime, setCurrentTime] = useState(undefined);
-  const [playerSettings, setPlayerSettings] = useState(() => loadPlayerSettings());
+  if (!vod) return null;
+
+  const [chapter, setChapter] = useState<
+    { name: string; image: string; start: number; duration: number; end: number } | null | undefined
+  >(undefined);
+  const [currentTime, setCurrentTime] = useState<number | undefined>(undefined);
+  const [playerSettings, setPlayerSettings] = useState<PlayerSettings>(() => loadPlayerSettings());
   const [theatreMode, setTheatreMode] = useState(false);
 
   useEffect(() => {
-    if (!vod) return;
     setChapter(vod.chapters.length > 0 ? vod.chapters[0] : null);
   }, [vod]);
 
@@ -65,13 +92,14 @@ export default function BaseVod(props) {
         setChapter(currentChapter);
       }
     }
-    const currentGame = games?.[part.part - 1];
+    const currentGame = games?.[part!.part - 1];
     const saveId = currentGame ? currentGame.id : vod.id;
     const prefix = currentGame ? 'game_' : 'vod_';
-    saveResumePosition(saveId, currentTime, prefix);
+    saveResumePosition(String(saveId), currentTime, prefix);
   }, [currentTime, vod, playerRef, games, part]);
 
   const copyTimestamp = () => {
+    if (currentTime === undefined) return;
     navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?t=${toHMS(currentTime)}`);
   };
 
@@ -107,8 +135,6 @@ export default function BaseVod(props) {
             setPart={setPart}
             setPlayerState={setPlayerState}
             origin={origin}
-            defaultVolume={playerSettings.volume}
-            defaultMuted={playerSettings.muted}
             theatreMode={theatreMode}
             setTheatreMode={setTheatreMode}
             copyTimestamp={copyTimestamp}
@@ -122,8 +148,6 @@ export default function BaseVod(props) {
             setPlayerState={setPlayerState}
             setCurrentTime={setCurrentTime}
             origin={origin}
-            defaultVolume={playerSettings.volume}
-            defaultMuted={playerSettings.muted}
             theatreMode={theatreMode}
             setTheatreMode={setTheatreMode}
             copyTimestamp={copyTimestamp}
@@ -161,7 +185,7 @@ export default function BaseVod(props) {
             />
           )}
           <CustomWidthTooltip title={vod.title}>
-            <Typography fontWeight={550} variant="body1" noWrap={true}>{`${vod.title}`}</Typography>
+            <Typography sx={{ fontWeight: 550 }} variant="body1" noWrap={true}>{`${vod.title}`}</Typography>
           </CustomWidthTooltip>
           <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
             <Box sx={{ ml: 0.5 }}>
@@ -171,11 +195,11 @@ export default function BaseVod(props) {
                   <Select
                     labelId="select-label"
                     label="Part"
-                    value={part.part - 1}
-                    onChange={handlePartChange}
+                    value={part!.part - 1}
+                    onChange={(e) => handlePartChange?.(e as unknown as ChangeEvent<HTMLSelectElement>)}
                     autoWidth
                   >
-                    {youtube.map((data, i) => {
+                    {youtube!.map((data, i) => {
                       return (
                         <MenuItem key={data.id} value={i}>
                           {data?.part || i + 1}
@@ -191,8 +215,8 @@ export default function BaseVod(props) {
                   <Select
                     labelId="select-label"
                     label="Game"
-                    value={part.part - 1}
-                    onChange={handlePartChange}
+                    value={part!.part - 1}
+                    onChange={(e) => handlePartChange?.(e as unknown as ChangeEvent<HTMLSelectElement>)}
                     autoWidth
                   >
                     {games.map((data, i) => {
