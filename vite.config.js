@@ -36,6 +36,12 @@ export default defineConfig({
         ];
         return externals.some((pkg) => id === pkg || id.startsWith(pkg + '/'));
       },
+      output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && assetInfo.name.endsWith('.css')) return 'player.css';
+          return 'assets/[name]-[hash][extname]';
+        },
+      },
     },
     sourcemap: true,
   },
