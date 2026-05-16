@@ -479,7 +479,7 @@ export default function Chat(props: ChatProps) {
             </div>
           }
         >
-          <span style={{ verticalAlign: 'middle' }}>
+          <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
             <img
               crossOrigin="anonymous"
               className="border-none max-w-full min-h-[28px]"
@@ -564,7 +564,7 @@ export default function Chat(props: ChatProps) {
       const emoteType = emote.provider;
 
       return (
-        <span>
+        <span style={{ display: 'inline-block' }}>
           <img
             key={key}
             crossOrigin="anonymous"
@@ -634,7 +634,7 @@ export default function Chat(props: ChatProps) {
                 } else if (isZeroWidth) {
                   const zeroWidthKey = `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`;
                   const zwSpan = (
-                    <span key={zeroWidthKey} style={{ verticalAlign: 'middle' }}>
+                    <span key={zeroWidthKey} style={{ display: 'inline-block', verticalAlign: 'middle' }}>
                       <img
                         crossOrigin="anonymous"
                         className="border-none max-w-full min-h-[28px]"
@@ -670,7 +670,7 @@ export default function Chat(props: ChatProps) {
                     key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
                     options={{ className: 'twemoji' }}
                   >
-                    <span>{`${word} `}</span>
+                    {`${word} `}
                   </Twemoji>
                 );
               } else {

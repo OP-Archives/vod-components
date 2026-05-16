@@ -17,7 +17,11 @@ export function Twemoji({ children, options = {} }: TwemojiProps) {
       });
     }
   }, [children, options]);
-  return <span ref={ref}>{children}</span>;
+  return (
+    <span style={{ display: 'inline-block', verticalAlign: 'middle' }} ref={ref}>
+      {children}
+    </span>
+  );
 }
 
 // vite-plugin-dts doesn't resolve global.d.ts twemoji declarations; tsc handles it fine
