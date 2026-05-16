@@ -149,8 +149,8 @@ export default function YoutubeVod(props: YoutubeVodProps) {
   }, [playerState, vodId, playerRef, youtube, part]);
 
   const handlePartChange = (evt: ChangeEvent<HTMLSelectElement>) => {
-    const tmpPart = evt.target.value + 1;
-    setPart({ part: parseInt(tmpPart), timestamp: 0 });
+    const tmpPart = Number(evt.target.value) + 1;
+    setPart({ part: tmpPart, timestamp: 0 });
   };
 
   useEffect(() => {
