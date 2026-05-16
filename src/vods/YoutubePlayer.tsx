@@ -1,11 +1,5 @@
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import WidthFullIcon from '@mui/icons-material/WidthFull';
-import WidthNormalIcon from '@mui/icons-material/WidthNormal';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import canAutoplay from 'can-autoplay';
+import { Copy, Maximize2, Minimize2, Check } from 'lucide-react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Youtube from 'react-youtube';
 import type { VODUpload, GameEntry, PartInfo, PlayerState } from '../types';
@@ -42,8 +36,12 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
   const timeIntervalRef = useRef<number | null>(null);
   const [showControls, setShowControls] = useState(true);
   const playerContainerRef = useRef<HTMLDivElement | null>(null);
-  const isTouchDevice = useMediaQuery('(pointer: coarse)');
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const autoHideTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches);
+  }, []);
 
   useEffect(() => {
     if (!playerRef.current) return;
@@ -147,6 +145,14 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
     if (evt.data !== 150) console.error(evt.data);
   };
 
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    copyTimestamp();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   const handlePointerMove = () => {
     setShowControls(true);
     if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
@@ -182,16 +188,11 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
   };
 
   return (
-    <Box
+    <div
       ref={playerContainerRef}
       onPointerMove={isTouchDevice ? undefined : handlePointerMove}
       onPointerLeave={isTouchDevice ? undefined : handlePointerLeave}
-      sx={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-      }}
+      className="relative w-full h-full overflow-hidden"
     >
       <Youtube
         className="player"
@@ -217,46 +218,36 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
         onStateChange={handleStateChange}
       />
 
-      {!isTouchDevice && !showControls && (
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 1,
-            pointerEvents: 'auto',
-            background: 'transparent',
-          }}
-        />
-      )}
+      {!isTouchDevice && !showControls && <div className="absolute inset-0 z-10 pointer-events-auto bg-transparent" />}
 
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+      <div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center"
+        style={{
           opacity: showControls ? 1 : 0,
           transition: 'opacity 0.3s ease',
-          pointerEvents: showControls ? 'auto' : 'none',
+          pointerEvents: showControls ? ('auto' as const) : ('none' as const),
         }}
       >
-        <Tooltip title={theatreMode ? 'Exit Theatre Mode' : 'Theatre Mode'}>
-          <IconButton onClick={toggleTheatreMode} color="inherit" sx={{ height: 32, width: 32 }}>
-            {theatreMode ? <WidthNormalIcon fontSize="small" /> : <WidthFullIcon fontSize="small" />}
-          </IconButton>
-        </Tooltip>
+        <button
+          onClick={toggleTheatreMode}
+          className="text-white hover:text-gray-300 transition-colors flex items-center justify-center"
+          style={{ height: 32, width: 32 }}
+          title={theatreMode ? 'Exit Theatre Mode' : 'Theatre Mode'}
+        >
+          {theatreMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        </button>
         {!games && (
-          <Tooltip title={`Copy Current Timestamp`}>
-            <IconButton onClick={copyTimestamp} color="inherit" aria-label="Copy Current Timestamp" component="button">
-              <ContentCopyIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          <button
+            onClick={handleCopy}
+            className="text-white hover:text-gray-300 transition-colors flex items-center justify-center"
+            style={{ height: 32, width: 32 }}
+            title={copied ? 'Copied!' : 'Copy Current Timestamp'}
+            aria-label="Copy Current Timestamp"
+          >
+            {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+          </button>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

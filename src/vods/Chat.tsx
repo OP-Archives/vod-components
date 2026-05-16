@@ -1,10 +1,5 @@
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { ChevronLeft } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react';
 import type {
   Comment,
   EmotesResponse,
@@ -27,6 +22,7 @@ import ChatMessages from './Chat/ChatMessages';
 import ChatSettingsModal from './Chat/ChatSettingsModal';
 import MessageTooltip from './Chat/MessageTooltip';
 import { Twemoji, testEmoji } from './Chat/Twemoji';
+import { adjustUsernameColor } from './Chat/UsernameColor';
 
 const BASE_TWITCH_CDN = 'https://static-cdn.jtvnw.net';
 const BASE_FFZ_EMOTE_CDN = 'https://cdn.frankerfacez.com/emote';
@@ -37,6 +33,40 @@ const BASE_BTTV_EMOTE_API = 'https://api.betterttv.net/3';
 const BASE_7TV_EMOTE_API = 'https://7tv.io/v3';
 
 const SCROLL_TOLERANCE = 50;
+
+interface MemoizedCommentProps {
+  comment: Comment;
+  showTimestamp: boolean;
+  transformBadges: (badges: Comment['user_badges'], keyPrefix: string) => React.ReactElement;
+  transformMessage: (fragments: Comment['message'], keyPrefix: string) => React.ReactNode | null;
+}
+
+const MemoizedComment = memo(function MemoizedComment({
+  comment,
+  showTimestamp,
+  transformBadges,
+  transformMessage,
+}: MemoizedCommentProps) {
+  return (
+    <div className="chat-message-optimize w-full px-1 pt-1 pb-1 text-[16px] leading-relaxed break-words hover:bg-white/5 transition-colors flex items-baseline">
+      {showTimestamp && (
+        <div className="min-w-0 mr-2 shrink-0">
+          <span className="text-xs text-[#adadb8] align-middle">{toHHMMSS(comment.content_offset_seconds)}</span>
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        {comment.user_badges && transformBadges(comment.user_badges, `comment-${comment.id}`)}
+        <span className="font-bold align-middle" style={{ color: adjustUsernameColor(comment.user_color) }}>
+          {comment.display_name}
+        </span>
+        <span className="align-middle text-[#efeff1]">
+          <span>: </span>
+          {transformMessage(comment.message, `comment-${comment.id}`)}
+        </span>
+      </div>
+    </div>
+  );
+});
 
 interface ChatProps {
   isPortrait: boolean;
@@ -75,7 +105,7 @@ export default function Chat(props: ChatProps) {
   } = props;
 
   const [showChat, setShowChat] = useState(true);
-  const [shownMessages, setShownMessages] = useState<React.ReactElement[]>([]);
+  const [shownMessages, setShownMessages] = useState<Comment[]>([]);
   const [emotes, setEmotes] = useState<Omit<EmotesResponse, 'vodId'>>({
     ffz_emotes: [],
     bttv_emotes: [],
@@ -85,6 +115,7 @@ export default function Chat(props: ChatProps) {
   const [showTimestamp, setShowTimestamp] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [chatWidth, setChatWidth] = useState<number | undefined>(undefined);
+  const [filterRegex, setFilterRegex] = useState<RegExp | null>(null);
 
   useEffect(() => {
     const updateChatWidth = () => {
@@ -114,6 +145,30 @@ export default function Chat(props: ChatProps) {
     updateChatWidth();
   }, []);
 
+  useEffect(() => {
+    const loadFilterRegex = () => {
+      const savedSettings = safeLocalStorage.getItem('chatSettings');
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings);
+          const words = (settings.filterWords as string[]) || [];
+          if (words.length > 0) {
+            const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            setFilterRegex(new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi'));
+          } else {
+            setFilterRegex(null);
+          }
+        } catch (e) {
+          console.error('Failed to parse filter words', e);
+        }
+      }
+    };
+
+    loadFilterRegex();
+    window.addEventListener('chat-settings-updated', loadFilterRegex);
+    return () => window.removeEventListener('chat-settings-updated', loadFilterRegex);
+  }, []);
+
   const isAtBottomRef = useRef(true);
   const comments = useRef<Comment[]>([]);
   const badges = useRef<Record<'channel' | 'global', Badge[]> | undefined>(undefined);
@@ -123,7 +178,7 @@ export default function Chat(props: ChatProps) {
   const playRef = useRef<number | null>(null);
   const chatRef = useRef<HTMLElement | null>(null);
   const stoppedAtIndex = useRef(0);
-  const newMessages = useRef<React.ReactElement[]>([]);
+  const newMessages = useRef<Comment[]>([]);
   const paginationAbortRef = useRef<AbortController | null>(null);
   const isFetchingNext = useRef(false);
   const lastFetchedCursor = useRef<string | null>(null);
@@ -412,40 +467,92 @@ export default function Chat(props: ChatProps) {
         <MessageTooltip
           key={key}
           title={
-            <Box sx={{ maxWidth: '30rem', textAlign: 'center' }}>
+            <div className="w-fit flex flex-col items-center">
               <img
                 crossOrigin="anonymous"
-                style={{
-                  marginBottom: '0.3rem',
-                  border: 'none',
-                  maxWidth: '100%',
-                  verticalAlign: 'top',
-                }}
+                className="mb-[0.3rem] border-none max-w-full align-top"
                 src={getEmoteImageUrl(emote, emoteType, 2)}
                 alt={word}
               />
-              <Typography
-                sx={{ display: 'block' }}
-                variant="caption"
-              >{`Emote: ${emote.name || emote.code}`}</Typography>
-              <Typography sx={{ display: 'block' }} variant="caption">{`${emoteType} Emotes`}</Typography>
-            </Box>
+              <p className="block text-xs">{`Emote: ${emote.name || emote.code}`}</p>
+              <p className="block text-xs">{`${emoteType} Emotes`}</p>
+            </div>
           }
         >
-          <Box sx={{ display: 'inline' }}>
+          <span style={{ verticalAlign: 'middle' }}>
             <img
               crossOrigin="anonymous"
-              style={{
-                verticalAlign: 'middle',
-                border: 'none',
-                maxWidth: '100%',
-                minHeight: '28px',
-              }}
+              className="border-none max-w-full min-h-[28px]"
+              style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(emote, emoteType)}
               srcSet={getEmoteImageSrcSet(emote, emoteType)}
               alt={word}
+              decoding="async"
+              loading="lazy"
             />{' '}
-          </Box>
+          </span>
+        </MessageTooltip>
+      );
+    },
+    [getEmoteImageUrl, getEmoteImageSrcSet]
+  );
+
+  const renderCombinedEmoteTooltip = useCallback(
+    (normalEmote: EmoteEntry, zwEmote: EmoteEntry, key: string) => {
+      const normalType = normalEmote.provider;
+      const zwType = zwEmote.provider;
+
+      return (
+        <MessageTooltip
+          key={key}
+          title={
+            <div className="w-fit flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center">
+                <img
+                  crossOrigin="anonymous"
+                  className="mb-[0.3rem] border-none max-w-full align-top"
+                  src={getEmoteImageUrl(normalEmote, normalType, 2)}
+                  alt={normalEmote.code}
+                />
+                <p className="block text-xs">{`Emote: ${normalEmote.name || normalEmote.code}`}</p>
+                <p className="block text-xs">{`${normalType} Emotes`}</p>
+              </div>
+              <hr className="border-[#d1d5db] w-full" />
+              <div className="flex flex-col items-center">
+                <img
+                  crossOrigin="anonymous"
+                  className="mb-[0.3rem] border-none max-w-full align-top"
+                  src={getEmoteImageUrl(zwEmote, zwType, 2)}
+                  alt={zwEmote.code}
+                />
+                <p className="block text-xs">{`Zero-Width: ${zwEmote.name || zwEmote.code}`}</p>
+                <p className="block text-xs">{`${zwType} Emotes`}</p>
+              </div>
+            </div>
+          }
+        >
+          <span style={{ display: 'inline-block', position: 'relative', verticalAlign: 'middle' }}>
+            <img
+              crossOrigin="anonymous"
+              className="border-none max-w-full min-h-[28px]"
+              style={{ verticalAlign: 'middle' }}
+              src={getEmoteImageUrl(normalEmote, normalType)}
+              srcSet={getEmoteImageSrcSet(normalEmote, normalType)}
+              alt={normalEmote.code}
+              decoding="async"
+              loading="lazy"
+            />
+            <img
+              crossOrigin="anonymous"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-full border-none align-middle pointer-events-none"
+              style={{ verticalAlign: 'middle' }}
+              src={getEmoteImageUrl(zwEmote, zwType)}
+              srcSet={getEmoteImageSrcSet(zwEmote, zwType)}
+              alt={zwEmote.code}
+              decoding="async"
+              loading="lazy"
+            />
+          </span>
         </MessageTooltip>
       );
     },
@@ -461,18 +568,13 @@ export default function Chat(props: ChatProps) {
           <img
             key={key}
             crossOrigin="anonymous"
-            style={{
-              position: 'absolute',
-              verticalAlign: 'middle',
-              maxWidth: '100%',
-              border: 'none',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
+            className="absolute align-middle max-w-full border-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ verticalAlign: 'middle' }}
             src={getEmoteImageUrl(emote, emoteType)}
             srcSet={getEmoteImageSrcSet(emote, emoteType)}
             alt={word}
+            decoding="async"
+            loading="lazy"
           />
         </span>
       );
@@ -480,34 +582,21 @@ export default function Chat(props: ChatProps) {
     [getEmoteImageUrl, getEmoteImageSrcSet]
   );
 
-  const shouldFilterMessage = useCallback((message: string): boolean => {
-    const savedSettings = safeLocalStorage.getItem('chatSettings');
-    if (!savedSettings) return false;
+  const shouldFilterMessage = useCallback(
+    (message: string): boolean => {
+      if (!filterRegex) return false;
 
-    try {
-      const settings = JSON.parse(savedSettings);
-      const filterWords = (settings.filterWords as string[]) || [];
-      if (!filterWords || filterWords.length === 0) return false;
-
-      const wordsToMatch = filterWords.map((word) => {
-        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return `\\b${escapedWord}\\b`;
-      });
-
-      const pattern = new RegExp(wordsToMatch.join('|'), 'g');
-
-      return pattern.test(message);
-    } catch (e) {
-      console.error('Failed to parse filter words', e);
-      return false;
-    }
-  }, []);
+      filterRegex.lastIndex = 0;
+      return filterRegex.test(message);
+    },
+    [filterRegex]
+  );
 
   const transformMessage = useCallback(
-    (fragments: Comment['message'], keyPrefix: string): React.ReactElement | null => {
+    (fragments: Comment['message'], keyPrefix: string): React.ReactNode | null => {
       if (!fragments) return null;
 
-      const textFragments: React.ReactElement[] = [];
+      const textFragments: (React.ReactElement | string)[] = [];
       for (const fragment of fragments) {
         if (fragment.emote || (fragment as unknown as { emoticon?: { emoticon_id: string } }).emoticon) {
           const emoteID = fragment.emote
@@ -518,11 +607,12 @@ export default function Chat(props: ChatProps) {
               { id: emoteID, code: fragment.text, provider: 'Twitch' as EmoteProvider },
               fragment.text,
               `${keyPrefix}-emote-${fragment.text}-${Math.random().toString(36).slice(2, 11)}`
-            )
+            ),
+            ' '
           );
         } else {
           const words = fragment.text.split(' ');
-          let lastNormalEmote: React.ReactElement | null = null;
+          let lastNormalEmoteData: EmoteEntry | null = null;
           let lastNormalEmoteIndex = -1;
           for (let i = 0; i < words.length; i++) {
             const word = words[i];
@@ -531,67 +621,63 @@ export default function Chat(props: ChatProps) {
               if (emote.provider === '7TV') {
                 const isZeroWidth = SEVENTV_isZeroWidth(emote);
 
-                if (isZeroWidth && lastNormalEmote) {
-                  const zeroWidthEmote = renderZeroWidthEmote(
-                    emote,
-                    word,
-                    `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`
-                  );
-
-                  const emoteContainer = (
-                    <Box
-                      key={`${keyPrefix}-emote-container-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
-                      sx={{ display: 'inline', position: 'relative', verticalAlign: 'middle' }}
-                    >
-                      {zeroWidthEmote}
-                      {lastNormalEmote}
-                    </Box>
-                  );
+                if (isZeroWidth && lastNormalEmoteData) {
+                  const storedEmote = lastNormalEmoteData as EmoteEntry;
+                  const combinedKey = `${keyPrefix}-combined-${storedEmote.code}-${word}-${i}`;
+                  const combined = renderCombinedEmoteTooltip(storedEmote, emote, combinedKey);
 
                   if (lastNormalEmoteIndex >= 0 && lastNormalEmoteIndex < textFragments.length) {
-                    textFragments[lastNormalEmoteIndex] = emoteContainer;
+                    textFragments[lastNormalEmoteIndex] = combined;
                   }
-                  lastNormalEmote = null;
+                  lastNormalEmoteData = null;
                   lastNormalEmoteIndex = -1;
-                } else {
-                  const normalEmote = renderEmoteTooltip(
-                    emote,
-                    word,
-                    `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`
+                } else if (isZeroWidth) {
+                  const zeroWidthKey = `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`;
+                  const zwSpan = (
+                    <span key={zeroWidthKey} style={{ verticalAlign: 'middle' }}>
+                      <img
+                        crossOrigin="anonymous"
+                        className="border-none max-w-full min-h-[28px]"
+                        style={{ verticalAlign: 'middle' }}
+                        src={getEmoteImageUrl(emote, emote.provider)}
+                        srcSet={getEmoteImageSrcSet(emote, emote.provider)}
+                        alt={word}
+                        decoding="async"
+                        loading="lazy"
+                      />{' '}
+                    </span>
                   );
-                  lastNormalEmote = normalEmote;
+                  textFragments.push(zwSpan, ' ');
+                } else {
+                  const normalKey = `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`;
+                  const normalEmoteEl = renderEmoteTooltip(emote, word, normalKey);
+                  lastNormalEmoteData = emote;
                   lastNormalEmoteIndex = textFragments.length;
-                  textFragments.push(normalEmote);
+                  textFragments.push(normalEmoteEl, ' ');
                 }
               } else {
-                const normalEmote = renderEmoteTooltip(
-                  emote,
-                  word,
-                  `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`
-                );
-                lastNormalEmote = normalEmote;
+                const normalKey = `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`;
+                const normalEmoteEl = renderEmoteTooltip(emote, word, normalKey);
+                lastNormalEmoteData = emote;
                 lastNormalEmoteIndex = textFragments.length;
-                textFragments.push(normalEmote);
+                textFragments.push(normalEmoteEl, ' ');
               }
             } else {
-              lastNormalEmote = null;
-              lastNormalEmoteIndex = -1;
+              lastNormalEmoteData = null;
               if (testEmoji(word)) {
                 textFragments.push(
                   <Twemoji
                     key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
                     options={{ className: 'twemoji' }}
                   >
-                    <Typography variant="body1" sx={{ display: 'inline' }}>{`${word} `}</Typography>
+                    <span>{`${word} `}</span>
                   </Twemoji>
                 );
               } else {
                 textFragments.push(
-                  <Typography
+                  <span
                     key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
-                    variant="body1"
-                    sx={{ display: 'inline' }}
-                  >{`${word} `}</Typography>
+                  >{`${word} `}</span>
                 );
               }
             }
@@ -599,14 +685,22 @@ export default function Chat(props: ChatProps) {
         }
       }
 
-      return textFragments.length > 0 ? <Box sx={{ display: 'inline' }}>{textFragments}</Box> : null;
+      return textFragments.length > 0 ? <span style={{ display: 'inline' }}>{textFragments}</span> : null;
     },
-    [emoteLookup, renderEmoteTooltip, SEVENTV_isZeroWidth, renderZeroWidthEmote]
+    [
+      emoteLookup,
+      renderEmoteTooltip,
+      renderCombinedEmoteTooltip,
+      SEVENTV_isZeroWidth,
+      renderZeroWidthEmote,
+      getEmoteImageUrl,
+      getEmoteImageSrcSet,
+    ]
   );
 
-  const transformBadges = (textBadges: Comment['user_badges'], keyPrefix: string): React.ReactElement => {
+  const transformBadges = useCallback((textBadges: Comment['user_badges'], keyPrefix: string): React.ReactElement => {
     if (!badges.current) {
-      return <Box sx={{ display: 'inline' }} />;
+      return <span className="inline" />;
     }
 
     const badgeWrapper: React.ReactElement[] = [];
@@ -629,42 +723,33 @@ export default function Chat(props: ChatProps) {
         <MessageTooltip
           key={`${keyPrefix}-badge-${badgeId}-${version}`}
           title={
-            <Box sx={{ maxWidth: '30rem', textAlign: 'center' }}>
+            <div className="w-fit flex flex-col items-center">
               <img
                 crossOrigin="anonymous"
-                style={{
-                  marginBottom: '0.3rem',
-                  border: 'none',
-                  maxWidth: '100%',
-                  verticalAlign: 'top',
-                }}
+                className="mb-[0.3rem] border-none max-w-full align-top"
                 src={badgeVersion.image_url_4x}
                 alt=""
               />
-              <Typography sx={{ display: 'block' }} variant="caption">{`${badgeId}`}</Typography>
-            </Box>
+              <p className="block text-xs">{`${badgeId}`}</p>
+            </div>
           }
         >
           <img
             crossOrigin="anonymous"
-            style={{
-              display: 'inline-block',
-              minWidth: '1rem',
-              height: '1rem',
-              margin: '0 .2rem .1rem 0',
-              backgroundPosition: '50%',
-              verticalAlign: 'middle',
-            }}
+            className="inline-block min-w-[1rem] h-[1rem] align-middle"
+            style={{ margin: '0 0.2rem 0.1rem 0', backgroundPosition: '50%' }}
             srcSet={`${badgeVersion.image_url_1x} 1x, ${badgeVersion.image_url_2x} 2x, ${badgeVersion.image_url_4x} 4x`}
             src={badgeVersion.image_url_1x}
             alt=""
+            decoding="async"
+            loading="lazy"
           />
         </MessageTooltip>
       );
     }
 
-    return <Box sx={{ display: 'inline' }}>{badgeWrapper}</Box>;
-  };
+    return <span style={{ display: 'inline' }}>{badgeWrapper}</span>;
+  }, []);
 
   const buildComments = useCallback(() => {
     if (!playerRef.current || comments.current.length === 0 || !cursor.current || stoppedAtIndex.current === null)
@@ -744,48 +829,14 @@ export default function Chat(props: ChatProps) {
         continue;
       }
 
-      newMessages.current.push(
-        <Box key={comment.id} sx={{ width: '100%' }}>
-          <Box
-            sx={{
-              alignItems: 'flex-start',
-              display: 'flex',
-              flexWrap: 'nowrap',
-              width: '100%',
-              pl: 0.5,
-              pt: 0.5,
-              pr: 0.5,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-              {showTimestamp && (
-                <Box sx={{ display: 'inline', pl: 1, pr: 1 }}>
-                  <Typography variant="caption" color="textSecondary">
-                    {toHHMMSS(comment.content_offset_seconds)}
-                  </Typography>
-                </Box>
-              )}
-              <Box sx={{ flexGrow: 1 }}>
-                {comment.user_badges && transformBadges(comment.user_badges, `comment-${comment.id}`)}
-                <Box sx={{ textDecoration: 'none', display: 'inline' }}>
-                  <span style={{ color: comment.user_color, fontWeight: 600 }}>{comment.display_name}</span>
-                </Box>
-                <Box sx={{ display: 'inline' }}>
-                  <span>: </span>
-                  {transformMessage(comment.message, `comment-${comment.id}`)}
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-      );
+      newMessages.current.push(comment);
     }
 
     if (newMessages.current.length > 0) {
       setShownMessages((prevShownMessages) => {
-        const existingKeys = new Set(prevShownMessages.map((msg) => msg.key));
+        const existingIds = new Set(prevShownMessages.map((msg) => msg.id));
 
-        const uniqueNewMessages = newMessages.current.filter((msg) => !existingKeys.has(msg.key));
+        const uniqueNewMessages = newMessages.current.filter((msg) => !existingIds.has(msg.id));
 
         const concatMessages = prevShownMessages.concat(uniqueNewMessages);
 
@@ -798,18 +849,7 @@ export default function Chat(props: ChatProps) {
       stoppedAtIndex.current = lastIndex;
       if (!isFetchingNext.current && comments.current.length === lastIndex) fetchNextComments();
     }
-  }, [
-    getCurrentTime,
-    playerRef,
-    vodId,
-    showTimestamp,
-    transformMessage,
-    isPlaying,
-    shouldFilterMessage,
-    archiveApiBase,
-    channel,
-    transformBadges,
-  ]);
+  }, [getCurrentTime, playerRef, vodId, isPlaying, shouldFilterMessage, archiveApiBase, channel]);
 
   const scrollToBottom = () => {
     if (!chatRef.current) return;
@@ -1012,14 +1052,7 @@ export default function Chat(props: ChatProps) {
   }, [vodId, playerRef, playerState, getCurrentTime, handleScroll, isPlaying, archiveApiBase, channel]);
 
   return (
-    <Box
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0,
-      }}
-    >
+    <div className={`${isPortrait ? 'flex-1' : 'h-full'} flex flex-col min-w-0 min-h-0 relative`}>
       {showChat && (
         <>
           <ChatHeader
@@ -1028,28 +1061,41 @@ export default function Chat(props: ChatProps) {
             setShowChat={setShowChat}
             setShowModal={setShowModal}
           />
-          <Divider />
-          <Box sx={{ height: '100%', width: isPortrait ? 'unset' : `${chatWidth}px`, minHeight: 0 }}>
+          <hr className="border-[#303032]" />
+          <div
+            className="h-full flex-1 min-w-0 min-h-0 overflow-hidden"
+            style={{ width: isPortrait ? '100%' : `${chatWidth}px` }}
+          >
             <ChatMessages
               comments={comments}
-              shownMessages={shownMessages}
+              shownMessages={shownMessages.map((comment) => (
+                <MemoizedComment
+                  key={comment.id}
+                  comment={comment}
+                  showTimestamp={showTimestamp}
+                  transformBadges={transformBadges}
+                  transformMessage={transformMessage}
+                />
+              ))}
               scrolling={scrolling}
               scrollToBottom={scrollToBottom}
               chatRef={chatRef}
               handleScroll={handleScroll}
               handleImageLoad={handleImageLoad}
             />
-          </Box>
+          </div>
         </>
       )}
       {!isPortrait && !showChat && (
-        <Box sx={{ position: 'absolute', right: 0, top: 0 }}>
-          <Tooltip title="Expand">
-            <IconButton onClick={() => setShowChat(!showChat)}>
-              <ChevronRightIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <div className="absolute right-2 top-2 z-50">
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className="bg-[#18181b] border border-[#303032] border-r-0 rounded-l-lg p-1.5 text-white hover:text-gray-300 hover:bg-[#2f2f35] transition-all shadow-xl flex items-center justify-center cursor-pointer"
+            title="Expand Chat"
+          >
+            <ChevronLeft size={16} />
+          </button>
+        </div>
       )}
       <ChatSettingsModal
         userChatDelay={userChatDelay}
@@ -1061,6 +1107,6 @@ export default function Chat(props: ChatProps) {
         chatWidth={chatWidth}
         setChatWidth={setChatWidth}
       />
-    </Box>
+    </div>
   );
 }

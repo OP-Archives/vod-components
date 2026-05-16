@@ -2,15 +2,18 @@ import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 import path from 'path';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [
     react({
       jsxRuntime: 'automatic',
     }),
+    tailwindcss(),
     dts({
       include: ['src/**/*'],
       outDir: 'dist',
+      insertTypesEntry: true,
     }),
   ],
   build: {
@@ -25,13 +28,12 @@ export default defineConfig({
           'react',
           'react-dom',
           'react/jsx-runtime',
-          '@mui/material',
-          '@mui/icons-material',
-          '@mui/system',
-          '@emotion/react',
-          '@emotion/styled',
+          'lucide-react',
           'simplebar-react',
           'react-router-dom',
+          'react-youtube',
+          'twemoji',
+          'hls.js',
         ];
         return externals.some((pkg) => id === pkg || id.startsWith(pkg + '/'));
       },

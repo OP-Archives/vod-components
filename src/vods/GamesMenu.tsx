@@ -1,29 +1,18 @@
 import humanize from 'humanize-duration';
 import { useState, memo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import SimpleBar from 'simplebar-react';
-import type { Chapter, VODUpload, PartInfo } from '../types';
-import { toSeconds, getImage } from '../utils/helpers';
+import type { GameEntry, PartInfo } from '../types';
+import { getImage } from '../utils/helpers';
 
-interface VodChaptersProps {
-  chapters: Chapter[];
-  chapter: { name: string; image: string; start: number; duration: number; end: number } | null;
-  setPart?: (part: PartInfo) => void;
-  youtube?: VODUpload[];
-  setChapter: (ch: { name: string; image: string; start: number; duration: number; end: number } | null) => void;
-  setTimestamp?: (ts: number) => void;
-  isYoutubeVod?: boolean;
+interface GamesMenuProps {
+  games: GameEntry[];
+  part: PartInfo | null;
+  setPart: (part: PartInfo) => void;
 }
 
-const VodChapters = memo<VodChaptersProps>(function VodChapters({
-  chapters,
-  chapter,
-  setPart,
-  youtube,
-  setChapter,
-  setTimestamp,
-  isYoutubeVod,
-}) {
+const GamesMenu = memo(function GamesMenu({ games, part, setPart }: GamesMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -31,6 +20,9 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
     left: 0,
     maxHeight: 400,
   });
+  const navigate = useNavigate();
+
+  const currentGame = part ? games[part.part - 1] : null;
 
   const handleClose = () => {
     setMenuOpen(false);
@@ -81,24 +73,9 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
     };
   }, [menuOpen]);
 
-  const handleChapterClick = (data: Chapter) => {
-    if (isYoutubeVod && youtube) {
-      let part = 1;
-      let timestamp = data?.start;
-      if (timestamp! > 1) {
-        for (let data of youtube) {
-          if ((data.duration ?? 0) > timestamp!) {
-            part = data?.part || 1;
-            break;
-          }
-          timestamp! -= data.duration ?? 0;
-        }
-      }
-      setPart?.({ part: part, timestamp: timestamp! });
-    } else {
-      setTimestamp?.(data?.start || toSeconds(data.duration.toString()));
-    }
-    setChapter(data);
+  const handleGameClick = (game: GameEntry, index: number) => {
+    setPart({ part: index + 1, timestamp: 0 });
+    navigate(`?game_id=${game.id}`, { replace: true });
     handleClose();
   };
 
@@ -108,11 +85,11 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
         ref={buttonRef}
         onClick={handleClick}
         className="flex text-white hover:text-gray-300 transition-colors"
-        title={chapter!.name}
+        title={currentGame?.game_name || ''}
       >
         <img
           alt=""
-          src={getImage(chapter!.image)}
+          src={getImage(currentGame?.chapter_image)}
           className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px] block rounded-sm"
         />
       </button>
@@ -134,23 +111,27 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
           >
             <SimpleBar style={{ maxHeight: `${Math.min(400, coords.maxHeight)}px` }}>
               <div className="flex flex-col">
-                {chapters.map((data) => (
+                {games.map((game, index) => (
                   <button
-                    onClick={() => handleChapterClick(data)}
-                    key={`${data.name}-${data.start}`}
+                    onClick={() => handleGameClick(game, index)}
+                    key={game.id}
                     className={`w-full text-left flex items-start gap-2 px-2 py-1.5 sm:px-3 sm:py-2 transition-colors ${
-                      data.start === chapter!.start ? 'bg-[#2f2f35]' : 'hover:bg-[#2f2f35]'
+                      index === part!.part - 1 ? 'bg-[#2f2f35]' : 'hover:bg-[#2f2f35]'
                     }`}
                   >
                     <div className="flex-shrink-0">
-                      <img alt="" src={getImage(data.image)} className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px]" />
+                      <img
+                        alt=""
+                        src={getImage(game.chapter_image)}
+                        className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px]"
+                      />
                     </div>
                     <div className="flex flex-col min-w-0 w-full">
                       <span className="text-xs sm:text-sm text-[#efeff1] whitespace-normal break-words leading-snug">
-                        {data.name}
+                        {game.game_name}
                       </span>
-                      {data.end !== undefined && (
-                        <span className="text-xs text-[#adadb8] mt-0.5">{`${humanize(data.duration * 1000, { largest: 2 })}`}</span>
+                      {game.duration > 0 && (
+                        <span className="text-xs text-[#adadb8] mt-0.5">{`${humanize(game.duration * 1000, { largest: 2 })}`}</span>
                       )}
                     </div>
                   </button>
@@ -164,4 +145,4 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
   );
 });
 
-export default VodChapters;
+export default GamesMenu;

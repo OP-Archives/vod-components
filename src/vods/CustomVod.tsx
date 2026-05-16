@@ -1,6 +1,3 @@
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import type { VOD, PlayerState } from '../types';
@@ -10,16 +7,18 @@ import { getResumePosition, saveResumePosition, clearResumePosition } from '../u
 import BaseVod from './BaseVod';
 import Chat from './Chat';
 
-export default function CustomVod(props: {
+export interface CustomVodProps {
   archiveApiBase: string;
   channel: string;
   logo: string;
   cdnBase?: string;
+  type?: 'cdn' | 'manual';
   twitchId: number;
-}) {
+}
+
+export default function CustomVod(props: CustomVodProps) {
   const { archiveApiBase, channel, logo, cdnBase, twitchId } = props;
   const location = useLocation();
-  const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams<{ vodId: string }>();
   const [vod, setVod] = useState<VOD | undefined>(undefined);
   const [timestamp, setTimestamp] = useState<number | undefined>(undefined);
@@ -27,6 +26,15 @@ export default function CustomVod(props: {
   const [userChatDelay, setUserChatDelay] = useState(0);
   const [playerState, setPlayerState] = useState<PlayerState>(-1);
   const playerRef = useRef<HTMLVideoElement | null>(null);
+  const [isPortrait, setIsPortrait] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(orientation: portrait)');
+    setIsPortrait(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsPortrait(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -110,9 +118,9 @@ export default function CustomVod(props: {
   if (vod === undefined) return <Loading logo={logo} />;
 
   return (
-    <Box sx={{ height: '100%', width: '100%' }}>
-      <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
-        <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%', minWidth: 0 }}>
+    <div className="h-full w-full">
+      <div className={`flex ${isPortrait ? 'flex-col' : 'flex-row'} h-full w-full min-w-0 overflow-hidden`}>
+        <div className={`min-w-0 min-h-0 overflow-hidden ${isPortrait ? 'w-full flex-shrink-0' : 'h-full flex-1'}`}>
           <BaseVod
             {...props}
             logo={logo}
@@ -123,9 +131,11 @@ export default function CustomVod(props: {
             setDelay={setDelay}
             setPlayerState={setPlayerState}
             cdnBase={cdnBase}
+            type={props.type}
+            isPortrait={isPortrait}
           />
-        </Box>
-        {isPortrait && <Divider />}
+        </div>
+        {isPortrait && <hr className="border-[#303032]" />}
         <Chat
           archiveApiBase={archiveApiBase}
           isPortrait={isPortrait}
@@ -139,7 +149,7 @@ export default function CustomVod(props: {
           twitchId={twitchId}
           channel={channel}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

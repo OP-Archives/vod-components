@@ -1,9 +1,4 @@
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import SettingsIcon from '@mui/icons-material/Settings';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
+import { ChevronRight, Settings } from 'lucide-react';
 
 interface ChatHeaderProps {
   isPortrait: boolean;
@@ -16,36 +11,24 @@ export default function ChatHeader(props: ChatHeaderProps) {
   const { isPortrait, showChat, setShowChat, setShowModal } = props;
 
   return (
-    <Box sx={{ display: 'grid', alignItems: 'center', p: 1 }}>
+    <div className="flex items-center justify-between flex-nowrap p-1">
       {!isPortrait && (
-        <Box
-          sx={{
-            justifySelf: 'left',
-            gridColumnStart: 1,
-            gridRowStart: 1,
-          }}
+        <button
+          onClick={() => setShowChat(!showChat)}
+          className="text-white hover:text-gray-300 transition-colors"
+          title="Collapse"
         >
-          <Tooltip title="Collapse">
-            <IconButton onClick={() => setShowChat(!showChat)}>
-              <ChevronLeftIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+          <ChevronRight size={20} />
+        </button>
       )}
-      <Box
-        sx={{
-          justifySelf: 'center',
-          gridColumnStart: 1,
-          gridRowStart: 1,
-        }}
+      <span className="flex-1 text-center text-sm font-medium text-white">Chat Replay</span>
+      <button
+        onClick={() => setShowModal(true)}
+        className="text-white hover:text-gray-300 transition-colors"
+        title="Settings"
       >
-        <Typography variant="body1">Chat Replay</Typography>
-      </Box>
-      <Box sx={{ justifySelf: 'end', gridColumnStart: 1, gridRowStart: 1 }}>
-        <IconButton title="Settings" onClick={() => setShowModal(true)} color="primary">
-          <SettingsIcon />
-        </IconButton>
-      </Box>
-    </Box>
+        <Settings size={20} />
+      </button>
+    </div>
   );
 }

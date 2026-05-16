@@ -8,10 +8,19 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.es.js"
+      "import": "./dist/index.es.js",
+      "types": "./dist/index.d.ts",
+      "style": "./dist/index.css"
     },
-    "./utils/*": "./dist/utils/*.js",
-    "./vods/*": "./dist/vods/*.js"
+    "./index.css": "./dist/index.css",
+    "./utils/*": {
+      "import": "./dist/src/utils/*.js",
+      "types": "./dist/src/utils/*.d.ts"
+    },
+    "./vods/*": {
+      "import": "./dist/src/vods/*.js",
+      "types": "./dist/src/vods/*.d.ts"
+    }
   },
   "files": [
     "dist"
@@ -36,25 +45,26 @@
     "url": "https://github.com/OP-Archives/vod-components.git"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "concurrently": "^9.2.1",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.0",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.6.0",
     "nodemon": "^3.1.14",
+    "tailwindcss": "^4.3.0",
     "vite": "^8.0.13",
     "vite-plugin-dts": "^5.0.0"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
     "can-autoplay": "^3.0.2",
     "hls.js": "^1.6.16",
     "humanize-duration": "^3.33.2",
-    "lodash.debounce": "^4.0.8",
     "react-router-dom": "^7.15.1",
     "react-youtube": "^10.1.0",
     "simplebar-react": "^3.3.2",
@@ -62,8 +72,7 @@
     "twemoji": "^14.0.2"
   },
   "peerDependencies": {
-    "@mui/icons-material": "^9.0.0",
-    "@mui/material": "^9.0.0",
+    "lucide-react": "^0.469.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   }

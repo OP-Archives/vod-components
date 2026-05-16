@@ -1,14 +1,5 @@
-import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import Box from '@mui/material/Box';
-import Collapse from '@mui/material/Collapse';
-import FormControl from '@mui/material/FormControl';
-import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import Typography from '@mui/material/Typography';
-import { useEffect, useState, ChangeEvent, RefObject } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useRef, ChangeEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { VOD, VODUpload, GameEntry, PartInfo, PlayerState, PlayerSettings } from '../types';
 import CustomWidthTooltip from '../utils/CustomToolTip';
@@ -16,15 +7,16 @@ import { toHMS } from '../utils/helpers';
 import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
 import { saveResumePosition } from '../utils/positionStorage';
 import CustomPlayer from './CustomPlayer';
+import GamesMenu from './GamesMenu';
 import VodChapters from './VodChapters';
 import YoutubePlayer from './YoutubePlayer';
 
-interface BaseVodProps {
+export interface BaseVodProps {
   origin?: string;
   isYoutubeVod?: boolean;
   youtube?: VODUpload[];
   handlePartChange?: (evt: ChangeEvent<HTMLSelectElement>) => void;
-  playerRef: RefObject<HTMLVideoElement | null>;
+  playerRef: React.RefObject<HTMLVideoElement | null>;
   part?: PartInfo | null;
   setPart?: (part: PartInfo | null) => void;
   vod: VOD | undefined;
@@ -38,7 +30,7 @@ interface BaseVodProps {
   logo: string;
   archiveApiBase: string;
   channel: string;
-  twitchId: number;
+  isPortrait?: boolean;
 }
 
 export default function BaseVod(props: BaseVodProps) {
@@ -58,10 +50,17 @@ export default function BaseVod(props: BaseVodProps) {
     setPlayerState,
     games,
     cdnBase,
+    isPortrait,
   } = props;
   const part = partValue ?? null;
   const location = useLocation();
   const pathPrefix = location.pathname.split('/')[1];
+  const [theatreMode, setTheatreMode] = useState(false);
+  const [collapseOpen, setCollapseOpen] = useState(true);
+
+  useEffect(() => {
+    setCollapseOpen(!theatreMode);
+  }, [theatreMode]);
 
   if (!vod) return null;
 
@@ -70,7 +69,7 @@ export default function BaseVod(props: BaseVodProps) {
   >(undefined);
   const [currentTime, setCurrentTime] = useState<number | undefined>(undefined);
   const [playerSettings, setPlayerSettings] = useState<PlayerSettings>(() => loadPlayerSettings());
-  const [theatreMode, setTheatreMode] = useState(false);
+  const lastSaveRef = useRef<number>(0);
 
   useEffect(() => {
     setChapter(vod.chapters.length > 0 ? vod.chapters[0] : null);
@@ -92,40 +91,59 @@ export default function BaseVod(props: BaseVodProps) {
         setChapter(currentChapter);
       }
     }
-    const currentGame = games?.[part!.part - 1];
-    const saveId = currentGame ? currentGame.id : vod.id;
-    const prefix = currentGame ? 'game_' : 'vod_';
-    saveResumePosition(String(saveId), currentTime, prefix);
+
+    const now = Date.now();
+    if (now - lastSaveRef.current > 10000) {
+      const currentGame = games?.[part!.part - 1];
+      const saveId = currentGame ? currentGame.id : vod.id;
+      const prefix = currentGame ? 'game_' : 'vod_';
+      saveResumePosition(String(saveId), currentTime, prefix);
+
+      lastSaveRef.current = now;
+    }
   }, [currentTime, vod, playerRef, games, part]);
 
-  const copyTimestamp = () => {
-    if (currentTime === undefined) return;
-    navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?t=${toHMS(currentTime)}`);
+  const copyTimestamp = async (passedTime?: number) => {
+    let timeToCopy = passedTime;
+
+    if (timeToCopy === undefined || isNaN(timeToCopy)) {
+      if (playerRef.current) {
+        if (isYoutubeVod || games) {
+          let baseTime = 0;
+          if (youtube && isYoutubeVod) {
+            for (let i = 0; i < youtube.length; i++) {
+              if (i + 1 >= (part?.part ?? 1)) break;
+              baseTime += youtube[i].duration ?? 0;
+            }
+          } else if (games && part) {
+            baseTime = parseFloat(games[part.part - 1].start);
+          }
+          // @ts-expect-error - YouTube Player API
+          timeToCopy = baseTime + (playerRef.current.getCurrentTime?.() || 0);
+        } else {
+          timeToCopy = (playerRef.current as HTMLVideoElement).currentTime || 0;
+        }
+      } else {
+        timeToCopy = currentTime || 0;
+      }
+    }
+
+    const url = `${window.location.origin}${window.location.pathname}?t=${toHMS(timeToCopy ?? 0)}`;
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        height: '100%',
-        width: '100%',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        minWidth: 0,
-        overflow: 'hidden',
-        position: 'relative',
-        minHeight: 0,
-      }}
+    <div
+      className={`flex w-full flex-col items-start min-w-0 overflow-hidden relative min-h-0 ${isPortrait ? 'h-auto' : 'h-full'}`}
     >
-      <Box
-        sx={{
-          position: 'relative',
-          width: '100%',
-          aspectRatio: '16 / 9',
-          flex: '1 1 auto',
-          minHeight: 0,
-        }}
-      >
+      <div className={`relative w-full min-h-0 ${isPortrait ? 'aspect-video flex-shrink-0' : 'h-full flex-1'}`}>
         {isYoutubeVod ? (
           <YoutubePlayer
             playerRef={playerRef}
@@ -170,9 +188,12 @@ export default function BaseVod(props: BaseVodProps) {
             copyTimestamp={copyTimestamp}
           />
         )}
-      </Box>
-      <Collapse in={!theatreMode} timeout="auto" unmountOnExit sx={{ minHeight: 'auto !important', width: '100%' }}>
-        <Box sx={{ display: 'flex', p: 1, alignItems: 'center' }}>
+      </div>
+
+      <div
+        className={`transition-all duration-300 ease-in-out w-full ${collapseOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}
+      >
+        <div className="flex p-2 items-center overflow-hidden bg-[#18181b] rounded-b-lg">
           {chapter && !games && (
             <VodChapters
               chapters={vod.chapters}
@@ -184,69 +205,52 @@ export default function BaseVod(props: BaseVodProps) {
               isYoutubeVod={isYoutubeVod}
             />
           )}
-          <CustomWidthTooltip title={vod.title}>
-            <Typography sx={{ fontWeight: 550 }} variant="body1" noWrap={true}>{`${vod.title}`}</Typography>
-          </CustomWidthTooltip>
-          <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ ml: 0.5 }}>
+          {games && part && <GamesMenu games={games} part={part} setPart={setPart!} />}
+
+          <div className="flex-1 min-w-0 flex items-center">
+            <CustomWidthTooltip title={vod.title}>
+              <span className="block w-full font-semibold text-sm truncate leading-none">{vod.title}</span>
+            </CustomWidthTooltip>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="flex gap-2">
               {isYoutubeVod && (
-                <FormControl variant="outlined">
-                  <InputLabel id="select-label">Part</InputLabel>
-                  <Select
-                    labelId="select-label"
-                    label="Part"
-                    value={part!.part - 1}
-                    onChange={(e) => handlePartChange?.(e as unknown as ChangeEvent<HTMLSelectElement>)}
-                    autoWidth
-                  >
-                    {youtube!.map((data, i) => {
-                      return (
-                        <MenuItem key={data.id} value={i}>
-                          {data?.part || i + 1}
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
-                </FormControl>
+                <select
+                  value={part!.part - 1}
+                  onChange={(e) => handlePartChange?.(e as unknown as ChangeEvent<HTMLSelectElement>)}
+                  className="bg-[#18181b] border border-[#303032] rounded-md px-2 h-7 sm:h-9 text-xs sm:text-sm text-white appearance-none pr-6 sm:pr-8"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.25em 1.25em',
+                  }}
+                >
+                  {youtube!.map((data, i) => (
+                    <option key={data.id} value={i}>
+                      {data?.part || i + 1}
+                    </option>
+                  ))}
+                </select>
               )}
-              {games && (
-                <FormControl variant="outlined">
-                  <InputLabel id="select-label">Game</InputLabel>
-                  <Select
-                    labelId="select-label"
-                    label="Game"
-                    value={part!.part - 1}
-                    onChange={(e) => handlePartChange?.(e as unknown as ChangeEvent<HTMLSelectElement>)}
-                    autoWidth
-                  >
-                    {games.map((data, i) => {
-                      return (
-                        <MenuItem key={data.id} value={i}>
-                          {data.game_name}
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
-                </FormControl>
-              )}
-            </Box>
+            </div>
             {vod.prev && (
               <CustomWidthTooltip title="Previous">
-                <IconButton size="small" component="a" href={`/${pathPrefix}/${vod.prev.id}`}>
-                  <NavigateBeforeIcon fontSize="small" />
-                </IconButton>
+                <a href={`/${pathPrefix}/${vod.prev.id}`} className="text-white hover:text-gray-300 transition-colors">
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                </a>
               </CustomWidthTooltip>
             )}
             {vod.next && (
               <CustomWidthTooltip title="Next">
-                <IconButton size="small" component="a" href={`/${pathPrefix}/${vod.next.id}`}>
-                  <NavigateNextIcon fontSize="small" />
-                </IconButton>
+                <a href={`/${pathPrefix}/${vod.next.id}`} className="text-white hover:text-gray-300 transition-colors">
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                </a>
               </CustomWidthTooltip>
             )}
-          </Box>
-        </Box>
-      </Collapse>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

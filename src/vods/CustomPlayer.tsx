@@ -1,11 +1,7 @@
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import canAutoplay from 'can-autoplay';
-import Hls from 'hls.js';
+import type Hls from 'hls.js';
+import type { ErrorData } from 'hls.js';
+import { Play } from 'lucide-react';
 import { useRef, useEffect, useState, useCallback, ChangeEvent } from 'react';
 import type { VOD, PlayerSource, PlayerState, PlayerSettings } from '../types';
 import { sleep } from '../utils/helpers';
@@ -38,7 +34,7 @@ const hlsConfig: HlsConfig = {
   debug: false,
 };
 
-interface PlayerProps {
+export interface PlayerProps {
   setCurrentTime: (time: number) => void;
   type?: string;
   vod: VOD;
@@ -84,7 +80,24 @@ export default function Player(props: PlayerProps) {
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const isTouchDevice = useMediaQuery('(pointer: coarse)');
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [playIconSize, setPlayIconSize] = useState(96);
+
+  useEffect(() => {
+    setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches);
+    const updatePlayIconSize = () => {
+      if (window.innerWidth <= 480) {
+        setPlayIconSize(48);
+      } else if (window.innerWidth <= 768) {
+        setPlayIconSize(64);
+      } else {
+        setPlayIconSize(96);
+      }
+    };
+    updatePlayIconSize();
+    window.addEventListener('resize', updatePlayIconSize);
+    return () => window.removeEventListener('resize', updatePlayIconSize);
+  }, []);
 
   const stopLoop = useCallback(() => {
     if (timeIntervalRef.current) {
@@ -106,36 +119,53 @@ export default function Player(props: PlayerProps) {
   }, []);
 
   useEffect(() => {
-    if (type === 'cdn') {
-      const hlsUrl = `${cdnBase}/videos/${vod.platform_vod_id}/hls/${vod.platform_vod_id}.m3u8`;
-      setSource(hlsUrl);
+    let isMounted = true;
 
-      if (Hls.isSupported()) {
-        hlsInstance.current = new Hls(hlsConfig);
-        hlsInstance.current.loadSource(hlsUrl);
-        hlsInstance.current.attachMedia(playerRef.current!);
+    const initHls = async () => {
+      if (type === 'cdn') {
+        const hlsUrl = `${cdnBase}/videos/${vod.platform_vod_id}/hls/${vod.platform_vod_id}.m3u8`;
+        setSource(hlsUrl);
 
-        hlsInstance.current.on(Hls.Events.ERROR, (event, data) => {
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                hlsInstance.current!.destroy();
-                break;
-              default:
-                hlsInstance.current!.destroy();
-                setFileError('Failed to load video');
-                break;
+        if (playerRef.current!.canPlayType('application/vnd.apple.mpegurl')) {
+          playerRef.current!.src = hlsUrl;
+          return;
+        }
+
+        const HlsClass = (await import('hls.js')).default;
+
+        if (!isMounted) return;
+
+        if (HlsClass.isSupported()) {
+          hlsInstance.current = new HlsClass(hlsConfig);
+          hlsInstance.current.loadSource(hlsUrl);
+          hlsInstance.current.attachMedia(playerRef.current!);
+
+          hlsInstance.current.on(HlsClass.Events.ERROR, (_event: unknown, _data: unknown) => {
+            const data = _data as ErrorData;
+            if (data.fatal) {
+              switch (data.type) {
+                case HlsClass.ErrorTypes.NETWORK_ERROR:
+                case HlsClass.ErrorTypes.MEDIA_ERROR:
+                  hlsInstance.current!.destroy();
+                  break;
+                default:
+                  hlsInstance.current!.destroy();
+                  setFileError('Failed to load video');
+                  break;
+              }
             }
-          }
-        });
-      } else if (playerRef.current!.canPlayType('application/vnd.apple.mpegurl')) {
-        playerRef.current!.src = hlsUrl;
+          });
+        }
       }
-    }
+    };
+
+    initHls();
 
     return () => {
-      if (hlsInstance.current) hlsInstance.current.destroy();
+      isMounted = false;
+      if (hlsInstance.current) {
+        hlsInstance.current.destroy();
+      }
       stopLoop();
     };
   }, [type, cdnBase, vod, playerRef, stopLoop]);
@@ -144,7 +174,8 @@ export default function Player(props: PlayerProps) {
     if (!playerRef.current || playerRef.current.paused) return;
     const currentTime = playerRef.current.currentTime ?? 0;
     setCurrentTimeState(currentTime);
-  }, [playerRef]);
+    setCurrentTime(currentTime);
+  }, [playerRef, setCurrentTime]);
 
   const startLoop = useCallback(() => {
     if (timeIntervalRef.current) clearInterval(timeIntervalRef.current);
@@ -331,13 +362,6 @@ export default function Player(props: PlayerProps) {
   const handleWaiting = () => setPlayerState(3);
   const handlePlaying = () => setPlayerState(1);
 
-  const handleTimeUpdate = () => {
-    if (playerRef.current) {
-      setCurrentTime(playerRef.current.currentTime);
-      setCurrentTimeState(playerRef.current.currentTime);
-    }
-  };
-
   const handleLoadedMetadata = () => {
     const dur = playerRef.current!.duration;
     setDuration(dur);
@@ -399,38 +423,27 @@ export default function Player(props: PlayerProps) {
   };
 
   return (
-    <Box sx={{ height: '100%', width: '100%' }}>
+    <div className="h-full w-full">
       {type === 'manual' && !source && (
-        <Paper
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100%',
-            flexDirection: 'column',
-          }}
-        >
-          {fileError && <Alert severity="error">{fileError}</Alert>}
-          <Box sx={{ mt: 1 }}>
-            <Button variant="contained" component="label">
+        <div className="flex items-center justify-center h-full flex-col bg-[#18181b] rounded-lg">
+          {fileError && (
+            <div className="bg-red-900/50 border border-red-700 rounded-lg px-4 py-2 text-sm text-red-200 mb-2">
+              {fileError}
+            </div>
+          )}
+          <div className="mt-4">
+            <label className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors inline-block">
               Select Video
               <input type="file" hidden onChange={fileChange} accept="video/*,.mkv" />
-            </Button>
-          </Box>
-        </Paper>
+            </label>
+          </div>
+        </div>
       )}
 
-      <Box
+      <div
         ref={playerContainerRef}
-        sx={{
-          visibility: !source ? 'hidden' : 'visible',
-          height: '100%',
-          width: '100%',
-          outline: 'none',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-        onDoubleClick={toggleFullscreen}
+        className="h-full w-full outline-none relative overflow-hidden"
+        style={{ visibility: !source ? ('hidden' as const) : ('visible' as const) }}
       >
         <video
           ref={playerRef}
@@ -445,30 +458,21 @@ export default function Player(props: PlayerProps) {
           onWaiting={handleWaiting}
           onPlaying={handlePlaying}
           onError={handleError}
-          onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
-          style={{ height: '100%', width: '100%' }}
+          onClick={togglePlayPause}
+          onDoubleClick={toggleFullscreen}
+          className="h-full w-full cursor-pointer"
         />
 
-        {!isPlaying && (
-          <Box
-            onClick={togglePlayPause}
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(0,0,0,0.5)',
-              cursor: 'pointer',
-            }}
-          >
-            <PlayArrowIcon sx={{ fontSize: 80, color: 'white' }} />
-          </Box>
-        )}
+        <div
+          onClick={togglePlayPause}
+          onDoubleClick={toggleFullscreen}
+          className={`absolute inset-0 flex items-center justify-center bg-black/50 cursor-pointer transition-opacity duration-200 ${
+            isPlaying ? 'opacity-0 pointer-events-none delay-75' : 'opacity-100 delay-75'
+          }`}
+        >
+          <Play className="text-white drop-shadow-2xl" size={playIconSize} />
+        </div>
 
         <PlayerControls
           isPlaying={isPlaying}
@@ -489,7 +493,7 @@ export default function Player(props: PlayerProps) {
           onPlaybackSpeedChange={handlePlaybackSpeedChange}
           onCopyTimestamp={copyTimestamp}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

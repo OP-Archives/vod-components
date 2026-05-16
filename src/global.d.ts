@@ -3,15 +3,6 @@ declare module '*.css' {
   export default content;
 }
 
-declare module 'lodash.debounce' {
-  function debounce<T extends (...args: unknown[]) => void>(
-    func: T,
-    wait?: number,
-    options?: { leading?: boolean; trailing?: boolean; maxWait?: number }
-  ): T & { cancel: () => void; flush: () => void };
-  export default debounce;
-}
-
 declare module 'can-autoplay' {
   interface Result {
     result: boolean;
@@ -73,15 +64,6 @@ declare module 'react-dom/client' {
     render(children: ReactNode): void;
   }
   export function createRoot(container: Element | DocumentFragment): Root;
-}
-
-declare module 'vod-components' {
-  import type { CustomVodProps } from './vods/CustomVod';
-  import type { GamesProps } from './vods/Games';
-  import type { YoutubeVodProps } from './vods/YoutubeVod';
-  export const YoutubeVod: React.ComponentType<YoutubeVodProps>;
-  export const CustomVod: React.ComponentType<CustomVodProps>;
-  export const Games: React.ComponentType<GamesProps>;
 }
 
 interface ImportMeta {

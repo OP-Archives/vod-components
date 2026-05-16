@@ -1,23 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { createRoot } from 'react-dom/client';
 import type { ChangeEvent } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { YoutubeVod, CustomVod, Games } from 'vod-components';
+import { YoutubeVod, CustomVod, Games } from '../src/index';
 import { useState, useRef, useEffect } from 'react';
-import Box from '@mui/material/Box';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
-import Switch from '@mui/material/Switch';
-
-const darkTheme = createTheme({ palette: { mode: 'dark' } });
+import '../src/index.css';
 
 const tabs = ['youtube', 'custom', 'games'] as const;
 
@@ -28,15 +14,23 @@ function PlaygroundContent() {
   const vodId = routeVodId || '1673';
   const [tab, setTab] = useState(() => {
     const path = location.pathname.split('/')[1];
-    return tabs.indexOf(path as (typeof tabs)[number]) >= 0
-      ? tabs.indexOf(path as (typeof tabs)[number])
-      : 0;
+    return tabs.indexOf(path as (typeof tabs)[number]) >= 0 ? tabs.indexOf(path as (typeof tabs)[number]) : 0;
   });
   const [archiveApiBase, setArchiveApiBase] = useState('https://archive.overpowered.tv/api/v1');
   const [channel, setChannel] = useState('xqc');
   const [logo, setLogo] = useState('https://xqc.wtf/assets/logo-D84ej4L_.png');
   const [twitchId, setTwitchId] = useState('71092938');
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(() => window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setShowSidebar(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [vodIdInput, setVodIdInput] = useState(vodId);
 
   const [youtubeType, setYoutubeType] = useState<'live' | 'vod' | ''>('vod');
@@ -55,7 +49,7 @@ function PlaygroundContent() {
     setVodIdInput(vodId);
   }, [vodId]);
 
-  const handleTabChange = (_e: React.SyntheticEvent, newTab: number) => {
+  const handleTabChange = (_e: unknown, newTab: number) => {
     setTab(newTab);
     navigate(`/${tabs[newTab]}/${vodIdInput.trim() || vodId}`, { replace: true });
   };
@@ -82,204 +76,197 @@ function PlaygroundContent() {
       shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId) },
       youtube: { type: youtubeType, defaultDelay: youtubeDefaultDelay, origin: youtubeOrigin },
       custom: { cdnBase: customCdnBase, customType },
-      games: {},
+   games: { origin: youtubeOrigin },
     };
     setYoutubeKey((k) => k + 1);
     setCustomKey((k) => k + 1);
     setGamesKey((k) => k + 1);
   };
 
-  const inputStyle = { mb: 1.5, width: '100%' };
+  const labelClasses = 'block text-sm font-medium text-gray-400 mb-1';
+  const inputClasses =
+    'w-full bg-[#2f2f35] border border-[#3f3f46] rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500';
+  const selectClasses =
+    'w-full bg-[#2f2f35] border border-[#3f3f46] rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500';
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        width: '100vw',
-        bgcolor: '#0e0e10',
-        color: '#efeff1',
-      }}
-    >
-      <Box sx={{ borderBottom: 1, borderColor: '#2f2f35', bgcolor: '#18181b' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mr: 3, whiteSpace: 'nowrap' }}>
-            VOD Components Playground
-          </Typography>
-          <Tabs value={tab} onChange={handleTabChange} textColor="inherit" sx={{ minHeight: 48 }}>
-            <Tab label="YouTube VOD" value={0} sx={{ minHeight: 48 }} />
-            <Tab label="Custom VOD" value={1} sx={{ minHeight: 48 }} />
-            <Tab label="Games" value={2} sx={{ minHeight: 48 }} />
-          </Tabs>
-          <Box sx={{ ml: 'auto' }}>
-            <Switch
+    <div className="flex flex-col h-screen w-full bg-[#0e0e10] text-[#efeff1] overflow-hidden">
+      <div className="border-b border-[#2f2f35] bg-[#18181b]">
+        <div className="flex items-center px-4">
+          <h1 className="text-lg font-bold mr-3 whitespace-nowrap">VOD Components Playground</h1>
+          <div className="flex gap-0">
+            {tabs.map((t, i) => (
+              <button
+                key={t}
+                onClick={() => handleTabChange({}, i)}
+                className={`px-4 py-3 text-sm transition-colors ${tab === i ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
+              >
+                {t === 'youtube' ? 'YouTube VOD' : t === 'custom' ? 'Custom VOD' : 'Games'}
+              </button>
+            ))}
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <input
+              type="checkbox"
               checked={showSidebar}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setShowSidebar(e.target.checked)}
-              size="small"
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setShowSidebar(e.target.checked)}
+              className="w-4 h-4 accent-blue-500"
             />
-            <Typography variant="caption" sx={{ ml: 0.5, verticalAlign: 'middle' }}>
-              Props
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+            <span className="text-xs">Props</span>
+          </div>
+        </div>
+      </div>
 
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden min-w-0">
           <Routes>
-            <Route path="/youtube/:vodId" element={<YoutubeVod {...propsRef.current.shared} defaultDelay={propsRef.current.youtube.defaultDelay || 0} type={propsRef.current.youtube.type} origin={propsRef.current.youtube.origin} key={youtubeKey} />} />
-            <Route path="/custom/:vodId" element={<CustomVod {...propsRef.current.shared} cdnBase={propsRef.current.custom.cdnBase} type={propsRef.current.custom.customType} key={customKey} />} />
-            <Route path="/games/:vodId" element={<Games {...propsRef.current.shared} type="games" key={gamesKey} />} />
+            <Route
+              path="/youtube/:vodId"
+              element={
+                <YoutubeVod
+                  {...propsRef.current.shared}
+                  defaultDelay={propsRef.current.youtube.defaultDelay || 0}
+                  type={propsRef.current.youtube.type}
+                  origin={propsRef.current.youtube.origin}
+                  key={youtubeKey}
+                />
+              }
+            />
+            <Route
+              path="/custom/:vodId"
+              element={
+                <CustomVod
+                  {...propsRef.current.shared}
+                  cdnBase={propsRef.current.custom.cdnBase}
+                  type={propsRef.current.custom.customType}
+                  key={customKey}
+                />
+              }
+            />
+            <Route path="/games/:vodId" element={<Games {...propsRef.current.shared} key={gamesKey} />} />
             <Route path="*" element={<Navigate to={`/${tabs[tab]}/${vodId}`} replace />} />
           </Routes>
-        </Box>
+        </div>
 
         {showSidebar && (
-          <Box
-            sx={{
-              width: 280,
-              borderLeft: 1,
-              borderColor: '#2f2f35',
-              bgcolor: '#18181b',
-              overflowY: 'auto',
-              p: 2,
-              flexShrink: 0,
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ mb: 1, color: '#adadb8' }}>
-              Shared Props
-            </Typography>
-            <TextField
-              label="Archive API Base"
+          <div className="w-[280px] flex flex-col flex-shrink-0">
+            <h3 className="text-sm font-medium text-[#adadb8] mb-4">Shared Props</h3>
+            <label className={labelClasses}>Archive API Base</label>
+            <input
+              className={inputClasses}
               value={archiveApiBase}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setArchiveApiBase(e.target.value)}
-              size="small"
-              sx={inputStyle}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setArchiveApiBase(e.target.value)}
             />
-            <TextField
-              label="Channel"
+            <label className={labelClasses}>Channel</label>
+            <input
+              className={inputClasses}
               value={channel}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setChannel(e.target.value)}
-              size="small"
-              sx={inputStyle}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setChannel(e.target.value)}
             />
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <TextField
-                label="VOD ID"
+            <div className="flex gap-2 items-center mb-3">
+              <input
+                className="flex-1 bg-[#2f2f35] border border-[#3f3f46] rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
                 value={vodIdInput}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVodIdInput(e.target.value)}
-                size="small"
-                sx={{ flex: 1 }}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setVodIdInput(e.target.value)}
                 onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && applyVodId()}
               />
-              <Button size="small" variant="outlined" onClick={applyVodId}>
+              <button
+                onClick={applyVodId}
+                className="bg-transparent border border-[#3f3f46] text-white px-4 py-2 rounded text-sm hover:bg-[#2f2f35] transition-colors"
+              >
                 Go
-              </Button>
-            </Box>
-            <TextField
-              label="Logo URL"
+              </button>
+            </div>
+            <label className={labelClasses}>Logo URL</label>
+            <input
+              className={inputClasses}
               value={logo}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogo(e.target.value)}
-              size="small"
-              sx={inputStyle}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setLogo(e.target.value)}
             />
-            <TextField
-              label="Twitch ID"
+            <label className={labelClasses}>Twitch ID</label>
+            <input
+              className={inputClasses}
               type="number"
               value={twitchId}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTwitchId(e.target.value)}
-              size="small"
-              sx={inputStyle}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setTwitchId(e.target.value)}
             />
 
-           {tab === 0 && (
+            {tab === 0 && (
               <>
-                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, color: '#adadb8' }}>
-                  YouTube VOD Props
-                </Typography>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Type</InputLabel>
-                  <Select
-                    value={youtubeType}
-                    onChange={(e: SelectChangeEvent) => setYoutubeType(((e.target as { value: string }).value as 'live' | 'vod' | '') || '')}
-                  >
-                    <MenuItem value="live">live</MenuItem>
-                    <MenuItem value="vod">vod</MenuItem>
-                    <MenuItem value="">auto</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Default Delay (s)"
+                <h3 className="text-sm font-medium text-[#adadb8] mt-6 mb-1">YouTube VOD Props</h3>
+                <label className={labelClasses}>Type</label>
+                <select
+                  className={selectClasses}
+                  value={youtubeType}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                    setYoutubeType((e.target as HTMLSelectElement).value as 'live' | 'vod' | '')
+                  }
+                >
+                  <option value="live">live</option>
+                  <option value="vod">vod</option>
+                  <option value="">auto</option>
+                </select>
+                <label className={labelClasses}>Default Delay (s)</label>
+                <input
+                  className={inputClasses}
                   type="number"
                   value={youtubeDefaultDelay}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setYoutubeDefaultDelay(Number(e.target.value))}
-                  size="small"
-                  sx={inputStyle}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setYoutubeDefaultDelay(Number(e.target.value))}
                 />
-                <TextField
-                  label="Origin"
+                <label className={labelClasses}>Origin</label>
+                <input
+                  className={inputClasses}
                   value={youtubeOrigin}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setYoutubeOrigin(e.target.value)}
-                  size="small"
-                  sx={inputStyle}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setYoutubeOrigin(e.target.value)}
                 />
               </>
             )}
 
             {tab === 1 && (
               <>
-                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, color: '#adadb8' }}>
-                  Custom VOD Props
-                </Typography>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Type</InputLabel>
-                  <Select
-                    value={customType}
-                    onChange={(e: SelectChangeEvent) => setCustomType((e.target as { value: string }).value as 'cdn' | 'manual')}
-                  >
-                    <MenuItem value="cdn">cdn</MenuItem>
-                    <MenuItem value="manual">manual</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="CDN Base"
+                <h3 className="text-sm font-medium text-[#adadb8] mt-6 mb-1">Custom VOD Props</h3>
+                <label className={labelClasses}>Type</label>
+                <select
+                  className={selectClasses}
+                  value={customType}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                    setCustomType((e.target as HTMLSelectElement).value as 'cdn' | 'manual')
+                  }
+                >
+                  <option value="cdn">cdn</option>
+                  <option value="manual">manual</option>
+                </select>
+                <label className={labelClasses}>CDN Base</label>
+                <input
+                  className={inputClasses}
                   value={customCdnBase}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomCdnBase(e.target.value)}
-                  size="small"
-                  sx={inputStyle}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setCustomCdnBase(e.target.value)}
                 />
               </>
             )}
 
-            <Button
-              fullWidth
-              variant="contained"
-              size="large"
+            <button
               onClick={applyProps}
-              sx={{ mt: 2, mb: 1, py: 1.5, fontWeight: 700 }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-bold transition-colors mt-2 mb-1"
             >
               Apply to All
-            </Button>
+            </button>
 
-            <Typography variant="caption" sx={{ display: 'block', mt: 2, color: '#5c5c65' }}>
+            <p className="text-xs text-[#5c5c65] block mt-2">
               Navigate to /youtube, /custom, or /games to switch components.
-            </Typography>
-          </Box>
+            </p>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
 
 export default function App() {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <BrowserRouter>
-        <PlaygroundContent />
-      </BrowserRouter>
-    </ThemeProvider>
+    <BrowserRouter>
+      <PlaygroundContent />
+    </BrowserRouter>
   );
 }
 

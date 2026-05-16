@@ -41,6 +41,8 @@ export interface GameEntry {
   game_name: string;
   video_id: string;
   start: string;
+  duration: number;
+  chapter_image?: string;
 }
 
 export interface VODNavigation {

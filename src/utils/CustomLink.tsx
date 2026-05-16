@@ -1,10 +1,9 @@
-import Link from '@mui/material/Link';
-import { styled } from '@mui/material/styles';
+import { Link } from 'react-router-dom';
 
-const CustomLink = styled(Link)`
-  &:hover {
-    opacity: 0.5;
-  }
-`;
-
-export default CustomLink;
+export default function CustomLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link to={href} className="transition-opacity hover:opacity-50 inline-block no-underline">
+      {children}
+    </Link>
+  );
+}

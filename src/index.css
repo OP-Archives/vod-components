@@ -1,3 +1,49 @@
+@import 'tailwindcss';
+@source ".";
+
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
 .player {
   width: 100%;
   height: 100%;
@@ -8,6 +54,108 @@
 .twemoji {
   vertical-align: middle;
   border: none;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
+  display: inline;
+}
+
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 0.8s linear infinite;
+}
+
+.chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.pc-btn-xs {
+  height: 28px;
+  width: 28px;
+}
+.pc-btn-sm {
+  height: 30px;
+  width: 30px;
+}
+.pc-icon-xs {
+  width: 55px;
+}
+.pc-text-xs {
+  font-size: 11px;
+  min-width: 50px;
+}
+.pc-text-sm {
+  font-size: 12px;
+  min-width: 65px;
+}
+.pc-gap-xs {
+  gap: 0.25rem;
+}
+.pc-gap-sm {
+  gap: 0.75rem;
+}
+.pc-minw-xs {
+  min-width: 70px;
+}
+.pc-minw-sm {
+  min-width: 90px;
+}
+.pc-slider-thumb {
+  height: 10px;
+  width: 10px;
+}
+.pc-slider-track {
+  height: 3px;
+}
+
+@media (min-width: 640px) {
+  .pc-btn-xs {
+    height: 32px;
+    width: 32px;
+  }
+  .pc-btn-sm {
+    height: 32px;
+    width: 32px;
+  }
+  .pc-icon-xs {
+    width: 70px;
+  }
+  .pc-text-xs {
+    display: none;
+  }
+  .pc-text-sm {
+    display: block;
+  }
+  .pc-slider-thumb {
+    height: 12px;
+    width: 12px;
+  }
+  .pc-slider-track {
+    height: 4px;
+  }
+}
+
+:focus {
+  outline: none;
+}
+
+.chat-message-optimize {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 32px;
 }

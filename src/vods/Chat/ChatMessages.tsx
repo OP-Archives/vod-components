@@ -1,7 +1,6 @@
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
+import { Pause } from 'lucide-react';
 import SimpleBar from 'simplebar-react';
+import 'simplebar-react/dist/simplebar.min.css';
 import type { Comment } from '../../types';
 
 interface ChatMessagesProps {
@@ -21,20 +20,11 @@ export default function ChatMessages(props: ChatMessagesProps) {
 
   if (commentsArray && commentsArray.length === 0) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-          width: '100%',
-          flexDirection: 'column',
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-          <CircularProgress sx={{ mt: 2 }} size="2rem" />
-        </Box>
-      </Box>
+      <div className="flex justify-center items-center h-full w-full flex-col">
+        <div className="flex flex-col justify-center items-center">
+          <div className="spinner mt-2" />
+        </div>
+      </div>
     );
   }
 
@@ -44,49 +34,22 @@ export default function ChatMessages(props: ChatMessagesProps) {
         scrollableNodeProps={{ ref: chatRef, onScroll: handleScroll }}
         style={{ height: '100%', overflowX: 'hidden' }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            flexDirection: 'column',
-          }}
-        >
-          <Box
-            onLoadCapture={handleImageLoad}
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              minHeight: 0,
-              alignItems: 'flex-end',
-            }}
-          >
+        <div className="flex justify-end flex-col p-0">
+          <div onLoadCapture={handleImageLoad} className="flex flex-wrap min-h-0 items-end">
             {shownMessages}
-          </Box>
-        </Box>
+          </div>
+        </div>
       </SimpleBar>
       {scrolling && (
-        <Box
-          sx={{
-            position: 'relative',
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <Box
-            sx={{
-              background: 'rgba(0,0,0,.6)',
-              minHeight: 0,
-              borderRadius: 1,
-              mb: 1,
-              bottom: 0,
-              position: 'absolute',
-            }}
+        <div className="relative flex justify-center">
+          <button
+            onClick={scrollToBottom}
+            className="absolute bottom-1 z-10 rounded-full bg-[#18181b] text-xs text-gray-300 px-4 py-2 flex items-center gap-1.5 shadow-lg hover:bg-[#2f2f35] hover:text-white transition-all cursor-pointer"
           >
-            <Button size="small" onClick={scrollToBottom}>
-              Chat Paused
-            </Button>
-          </Box>
-        </Box>
+            <Pause size={18} />
+            <span>Chat Paused</span>
+          </button>
+        </div>
       )}
     </>
   );

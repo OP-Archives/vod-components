@@ -1,10 +1,3 @@
-import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import { useEffect, useState, useRef, ChangeEvent } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import type { VOD, GameEntry, PartInfo, PlayerState } from '../types';
@@ -13,10 +6,17 @@ import { getResumePosition, saveResumePosition, clearResumePosition } from '../u
 import BaseVod from './BaseVod';
 import Chat from './Chat';
 
-export default function Games(props: { archiveApiBase: string; channel: string; logo: string; twitchId: number }) {
+export interface GamesProps {
+  archiveApiBase: string;
+  channel: string;
+  logo: string;
+  twitchId: number;
+  origin?: string;
+}
+
+export default function Games(props: GamesProps) {
   const { archiveApiBase, channel, logo, twitchId } = props;
   const location = useLocation();
-  const isPortrait = useMediaQuery('(orientation: portrait)');
   const { vodId } = useParams<{ vodId: string }>();
   const [vod, setVod] = useState<VOD | undefined>(undefined);
   const [games, setGames] = useState<GameEntry[] | undefined>(undefined);
@@ -24,6 +24,15 @@ export default function Games(props: { archiveApiBase: string; channel: string; 
   const [userChatDelay, setUserChatDelay] = useState(0);
   const [playerState, setPlayerState] = useState<PlayerState>(-1);
   const playerRef = useRef<HTMLVideoElement | null>(null);
+  const [isPortrait, setIsPortrait] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(orientation: portrait)');
+    setIsPortrait(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsPortrait(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -125,43 +134,35 @@ export default function Games(props: { archiveApiBase: string; channel: string; 
 
   if (!games || games.length === 0) {
     return (
-      <Box
-        sx={{
-          height: '100%',
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 2,
-        }}
-      >
-        {logo && <img src={logo} alt="" style={{ height: 'auto', maxWidth: '200px' }} />}
-        <Typography variant="h6" color="text.secondary">
-          No games found
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+      <div className="h-screen w-screen flex flex-col items-center justify-center gap-4">
+        {logo && <img src={logo} alt="" className="h-auto max-w-[200px]" />}
+        <p className="text-lg text-gray-400">No games found</p>
+        <div className="flex gap-2">
           {vod.prev && (
-            <IconButton component="a" href={`/games/${vod.prev.id}`}>
-              <NavigateBeforeIcon />
-              Previous Game
-            </IconButton>
+            <a
+              href={`/games/${vod.prev.id}`}
+              className="text-white hover:text-gray-300 transition-colors flex items-center gap-1"
+            >
+              <span>Previous Game</span>
+            </a>
           )}
           {vod.next && (
-            <IconButton component="a" href={`/games/${vod.next.id}`}>
-              Next Game
-              <NavigateNextIcon />
-            </IconButton>
+            <a
+              href={`/games/${vod.next.id}`}
+              className="text-white hover:text-gray-300 transition-colors flex items-center gap-1"
+            >
+              <span>Next Game</span>
+            </a>
           )}
-        </Box>
-      </Box>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ height: '100%', width: '100%' }}>
-      <Box sx={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100%', width: '100%' }}>
-        <Box sx={{ display: 'flex', height: isPortrait ? 'auto' : '100%', width: '100%', minWidth: 0 }}>
+    <div className="h-full w-full">
+      <div className={`flex ${isPortrait ? 'flex-col' : 'flex-row'} h-full w-full min-w-0 overflow-hidden`}>
+        <div className={`min-w-0 min-h-0 overflow-hidden ${isPortrait ? 'w-full flex-shrink-0' : 'h-full flex-1'}`}>
           <BaseVod
             {...props}
             logo={logo}
@@ -172,9 +173,10 @@ export default function Games(props: { archiveApiBase: string; channel: string; 
             setPart={setPart}
             vod={vod}
             setPlayerState={setPlayerState}
+            isPortrait={isPortrait}
           />
-        </Box>
-        {isPortrait && <Divider />}
+        </div>
+        {isPortrait && <hr className="border-[#303032]" />}
         <Chat
           archiveApiBase={archiveApiBase}
           isPortrait={isPortrait}
@@ -189,7 +191,7 @@ export default function Games(props: { archiveApiBase: string; channel: string; 
           twitchId={twitchId}
           channel={channel}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
