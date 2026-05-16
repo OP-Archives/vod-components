@@ -1,5 +1,5 @@
 import humanize from 'humanize-duration';
-import { useState, memo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import SimpleBar from 'simplebar-react';
 import type { Chapter, VODUpload, PartInfo } from '../types';
@@ -15,7 +15,7 @@ interface VodChaptersProps {
   isYoutubeVod?: boolean;
 }
 
-const VodChapters = memo<VodChaptersProps>(function VodChapters({
+function VodChapters({
   chapters,
   chapter,
   setPart,
@@ -23,7 +23,7 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
   setChapter,
   setTimestamp,
   isYoutubeVod,
-}) {
+}: VodChaptersProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -62,22 +62,33 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
   };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleOutsideInteraction = (event: Event) => {
+      if (event instanceof KeyboardEvent && event.key === 'Escape') {
+        handleClose();
+        return;
+      }
+
       if (
         menuRef.current &&
         !menuRef.current.contains(event.target as Node) &&
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
       ) {
-        handleClose();
+        if (event.type !== 'keydown') handleClose();
       }
     };
 
     if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleOutsideInteraction);
+      document.addEventListener('wheel', handleOutsideInteraction, { capture: true, passive: true });
+      document.addEventListener('touchmove', handleOutsideInteraction, { capture: true, passive: true });
+      document.addEventListener('keydown', handleOutsideInteraction);
     }
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleOutsideInteraction);
+      document.removeEventListener('wheel', handleOutsideInteraction, { capture: true });
+      document.removeEventListener('touchmove', handleOutsideInteraction, { capture: true });
+      document.removeEventListener('keydown', handleOutsideInteraction);
     };
   }, [menuOpen]);
 
@@ -113,6 +124,10 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
         <img
           alt=""
           src={getImage(chapter!.image)}
+          width={40}
+          height={53}
+          decoding="async"
+          loading="lazy"
           className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px] block rounded-sm"
         />
       </button>
@@ -143,7 +158,15 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
                     }`}
                   >
                     <div className="flex-shrink-0">
-                      <img alt="" src={getImage(data.image)} className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px]" />
+                      <img
+                        alt=""
+                        src={getImage(data.image)}
+                        width={40}
+                        height={53}
+                        decoding="async"
+                        loading="lazy"
+                        className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px]"
+                      />
                     </div>
                     <div className="flex flex-col min-w-0 w-full">
                       <span className="text-xs sm:text-sm text-[#efeff1] whitespace-normal break-words leading-snug">
@@ -162,6 +185,6 @@ const VodChapters = memo<VodChaptersProps>(function VodChapters({
         )}
     </div>
   );
-});
+}
 
 export default VodChapters;

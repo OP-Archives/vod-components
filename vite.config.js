@@ -8,6 +8,9 @@ export default defineConfig({
   plugins: [
     react({
       jsxRuntime: 'automatic',
+      babel: {
+        plugins: [['babel-plugin-react-compiler', { target: '19' }]],
+      },
     }),
     tailwindcss(),
     dts({

@@ -1,5 +1,5 @@
 import humanize from 'humanize-duration';
-import { useState, memo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import SimpleBar from 'simplebar-react';
@@ -12,7 +12,7 @@ interface GamesMenuProps {
   setPart: (part: PartInfo) => void;
 }
 
-const GamesMenu = memo(function GamesMenu({ games, part, setPart }: GamesMenuProps) {
+function GamesMenu({ games, part, setPart }: GamesMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -54,22 +54,33 @@ const GamesMenu = memo(function GamesMenu({ games, part, setPart }: GamesMenuPro
   };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleOutsideInteraction = (event: Event) => {
+      if (event instanceof KeyboardEvent && event.key === 'Escape') {
+        handleClose();
+        return;
+      }
+
       if (
         menuRef.current &&
         !menuRef.current.contains(event.target as Node) &&
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
       ) {
-        handleClose();
+        if (event.type !== 'keydown') handleClose();
       }
     };
 
     if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleOutsideInteraction);
+      document.addEventListener('wheel', handleOutsideInteraction, { capture: true, passive: true });
+      document.addEventListener('touchmove', handleOutsideInteraction, { capture: true, passive: true });
+      document.addEventListener('keydown', handleOutsideInteraction);
     }
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleOutsideInteraction);
+      document.removeEventListener('wheel', handleOutsideInteraction, { capture: true });
+      document.removeEventListener('touchmove', handleOutsideInteraction, { capture: true });
+      document.removeEventListener('keydown', handleOutsideInteraction);
     };
   }, [menuOpen]);
 
@@ -90,6 +101,10 @@ const GamesMenu = memo(function GamesMenu({ games, part, setPart }: GamesMenuPro
         <img
           alt=""
           src={getImage(currentGame?.chapter_image)}
+          width={40}
+          height={53}
+          decoding="async"
+          loading="lazy"
           className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px] block rounded-sm"
         />
       </button>
@@ -123,6 +138,10 @@ const GamesMenu = memo(function GamesMenu({ games, part, setPart }: GamesMenuPro
                       <img
                         alt=""
                         src={getImage(game.chapter_image)}
+                        width={40}
+                        height={53}
+                        decoding="async"
+                        loading="lazy"
                         className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px]"
                       />
                     </div>
@@ -143,6 +162,6 @@ const GamesMenu = memo(function GamesMenu({ games, part, setPart }: GamesMenuPro
         )}
     </div>
   );
-});
+}
 
 export default GamesMenu;

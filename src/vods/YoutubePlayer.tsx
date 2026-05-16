@@ -36,6 +36,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
   const timeIntervalRef = useRef<number | null>(null);
   const [showControls, setShowControls] = useState(true);
   const playerContainerRef = useRef<HTMLDivElement | null>(null);
+  const localPlayerRef = useRef<unknown>(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const autoHideTimerRef = useRef<number | null>(null);
 
@@ -44,16 +45,23 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
   }, []);
 
   useEffect(() => {
-    if (!playerRef.current) return;
+    if (localPlayerRef.current) {
+      // eslint-disable-next-line react-compiler/react-compiler -- syncing external ref is required for parent access
+      (playerRef as React.MutableRefObject<unknown>).current = localPlayerRef.current;
+    }
+  }, [localPlayerRef.current]);
+
+  useEffect(() => {
+    if (!localPlayerRef.current) return;
 
     if (games) {
-      (playerRef.current as { loadVideoById: (id: string, time?: number) => void }).loadVideoById(
+      (localPlayerRef.current as { loadVideoById: (id: string, time?: number) => void }).loadVideoById(
         games[part!.part - 1].video_id,
         part!.timestamp
       );
     } else {
       const index = youtube!.findIndex((data) => data.part === part!.part);
-      (playerRef.current as { loadVideoById: (id: string, time?: number) => void }).loadVideoById(
+      (localPlayerRef.current as { loadVideoById: (id: string, time?: number) => void }).loadVideoById(
         youtube![index !== -1 ? index : part!.part - 1].upload_id,
         part!.timestamp
       );
@@ -61,7 +69,8 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
   }, [part, playerRef, youtube, games]);
 
   const timeUpdate = useCallback(() => {
-    if (!playerRef.current || (playerRef.current as { getPlayerState: () => number }).getPlayerState() === 1) return;
+    if (!localPlayerRef.current || (localPlayerRef.current as { getPlayerState: () => number }).getPlayerState() === 1)
+      return;
     let currentTime = 0;
     if (youtube) {
       for (let video of youtube) {
@@ -69,7 +78,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
         currentTime += video.duration ?? 0;
       }
     }
-    currentTime += (playerRef.current as { getCurrentTime: () => number }).getCurrentTime() ?? 0;
+    currentTime += (localPlayerRef.current as { getCurrentTime: () => number }).getCurrentTime() ?? 0;
     setCurrentTime(currentTime);
   }, [playerRef, youtube, part, setCurrentTime]);
 
@@ -94,10 +103,10 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
 
   const onReady = (evt: { target: unknown }) => {
     const player = evt.target;
-    playerRef.current = player;
+    localPlayerRef.current = player;
 
     canAutoplay.video().then(({ result }: { result: boolean }) => {
-      if (!result && playerRef.current) (player as { mute: () => void }).mute();
+      if (!result && localPlayerRef.current) (player as { mute: () => void }).mute();
     });
 
     if (games) {
@@ -157,7 +166,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
     setShowControls(true);
     if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
     autoHideTimerRef.current = setTimeout(() => {
-      if ((playerRef.current as { getPlayerState: () => number })?.getPlayerState() === 1) {
+      if ((localPlayerRef.current as { getPlayerState: () => number })?.getPlayerState() === 1) {
         setShowControls(false);
       }
     }, 3000);

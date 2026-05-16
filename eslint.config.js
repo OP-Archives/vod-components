@@ -3,6 +3,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import prettier from 'eslint-plugin-prettier';
 import globals from 'globals';
 import importX from 'eslint-plugin-import-x';
+import reactCompiler from 'eslint-plugin-react-compiler';
 
 export default [
   {
@@ -11,6 +12,7 @@ export default [
       'import-x': importX,
       '@typescript-eslint': tsPlugin,
       prettier,
+      'react-compiler': reactCompiler,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -33,6 +35,7 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'off',
       'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
       'prettier/prettier': 'error',
+      'react-compiler/react-compiler': 'error',
       'import-x/no-duplicates': 'error',
       'import-x/order': [
         'error',

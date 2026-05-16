@@ -116,6 +116,11 @@ export default function Chat(props: ChatProps) {
   const [showModal, setShowModal] = useState(false);
   const [chatWidth, setChatWidth] = useState<number | undefined>(undefined);
   const [filterRegex, setFilterRegex] = useState<RegExp | null>(null);
+  const filterRegexRef = useRef<RegExp | null>(null);
+
+  useEffect(() => {
+    filterRegexRef.current = filterRegex;
+  }, [filterRegex]);
 
   useEffect(() => {
     const updateChatWidth = () => {
@@ -582,15 +587,13 @@ export default function Chat(props: ChatProps) {
     [getEmoteImageUrl, getEmoteImageSrcSet]
   );
 
-  const shouldFilterMessage = useCallback(
-    (message: string): boolean => {
-      if (!filterRegex) return false;
+  const shouldFilterMessage = useCallback((message: string): boolean => {
+    const regex = filterRegexRef.current;
+    if (!regex) return false;
 
-      filterRegex.lastIndex = 0;
-      return filterRegex.test(message);
-    },
-    [filterRegex]
-  );
+    regex.lastIndex = 0;
+    return regex.test(message);
+  }, []);
 
   const transformMessage = useCallback(
     (fragments: Comment['message'], keyPrefix: string): React.ReactNode | null => {
