@@ -70,7 +70,6 @@ export default function Player(props: PlayerProps) {
   } = props;
   const hlsInstance = useRef<Hls | null>(null);
   const playerContainerRef = useRef<HTMLDivElement | null>(null);
-  const timeIntervalRef = useRef<number | null>(null);
   const [source, setSource] = useState<PlayerSource>(undefined);
   const [fileError, setFileError] = useState<string | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -97,13 +96,6 @@ export default function Player(props: PlayerProps) {
     updatePlayIconSize();
     window.addEventListener('resize', updatePlayIconSize);
     return () => window.removeEventListener('resize', updatePlayIconSize);
-  }, []);
-
-  const stopLoop = useCallback(() => {
-    if (timeIntervalRef.current) {
-      clearInterval(timeIntervalRef.current);
-      timeIntervalRef.current = null;
-    }
   }, []);
 
   useEffect(() => {
@@ -166,21 +158,15 @@ export default function Player(props: PlayerProps) {
       if (hlsInstance.current) {
         hlsInstance.current.destroy();
       }
-      stopLoop();
     };
-  }, [type, cdnBase, vod, playerRef, stopLoop]);
+  }, [type, cdnBase, vod, playerRef]);
 
   const timeUpdate = useCallback(() => {
-    if (!playerRef.current || playerRef.current.paused) return;
+    if (!playerRef.current) return;
     const currentTime = playerRef.current.currentTime ?? 0;
     setCurrentTimeState(currentTime);
     setCurrentTime(currentTime);
   }, [playerRef, setCurrentTime]);
-
-  const startLoop = useCallback(() => {
-    if (timeIntervalRef.current) clearInterval(timeIntervalRef.current);
-    timeIntervalRef.current = setInterval(timeUpdate, 1000);
-  }, [timeUpdate]);
 
   const fileChange = (evt: ChangeEvent<HTMLInputElement>) => {
     setFileError(undefined);
@@ -349,14 +335,12 @@ export default function Player(props: PlayerProps) {
     setIsPlaying(true);
     setPlayerState(1);
     timeUpdate();
-    startLoop();
-  }, [timeUpdate, startLoop, setPlayerState]);
+  }, [timeUpdate, setPlayerState]);
 
   const handlePause = useCallback(() => {
     setIsPlaying(false);
     setPlayerState(2);
-    stopLoop();
-  }, [stopLoop, setPlayerState]);
+  }, [setPlayerState]);
 
   const handleEnded = () => setPlayerState(0);
   const handleWaiting = () => setPlayerState(3);
@@ -452,6 +436,7 @@ export default function Player(props: PlayerProps) {
           tabIndex={-1}
           poster={vod.vod_uploads[0]?.thumbnail_url || undefined}
           preload="auto"
+          onTimeUpdate={timeUpdate}
           onPlay={handlePlay}
           onPause={handlePause}
           onEnded={handleEnded}

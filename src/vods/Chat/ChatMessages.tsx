@@ -10,11 +10,10 @@ interface ChatMessagesProps {
   scrollToBottom: () => void;
   chatRef: React.MutableRefObject<HTMLElement | null>;
   handleScroll: () => void;
-  handleImageLoad: () => void;
 }
 
 export default function ChatMessages(props: ChatMessagesProps) {
-  const { comments, shownMessages, scrolling, scrollToBottom, chatRef, handleScroll, handleImageLoad } = props;
+  const { comments, shownMessages, scrolling, scrollToBottom, chatRef, handleScroll } = props;
 
   const commentsArray = Array.isArray(comments) ? comments : comments.current;
 
@@ -35,9 +34,7 @@ export default function ChatMessages(props: ChatMessagesProps) {
         style={{ height: '100%', overflowX: 'hidden' }}
       >
         <div className="flex justify-end flex-col p-0">
-          <div onLoadCapture={handleImageLoad} className="flex flex-wrap min-h-0 items-end">
-            {shownMessages}
-          </div>
+          <div className="flex flex-wrap min-h-0 items-end">{shownMessages}</div>
         </div>
       </SimpleBar>
       {scrolling && (

@@ -26,13 +26,13 @@ import { adjustUsernameColor } from './Chat/UsernameColor';
 
 const BASE_TWITCH_CDN = 'https://static-cdn.jtvnw.net';
 const BASE_FFZ_EMOTE_CDN = 'https://cdn.frankerfacez.com/emote';
-const BASE_BTTV_EMOTE_CDN = 'https://emotes.overpowered.tv/bttv';
+const BASE_BTTV_EMOTE_CDN = 'https://cdn.betterttv.net/emote';
 const BASE_7TV_EMOTE_CDN = 'https://cdn.7tv.app/emote';
 const BASE_FFZ_EMOTE_API = 'https://api.frankerfacez.com/v1';
 const BASE_BTTV_EMOTE_API = 'https://api.betterttv.net/3';
 const BASE_7TV_EMOTE_API = 'https://7tv.io/v3';
 
-const SCROLL_TOLERANCE = 50;
+const SCROLL_TOLERANCE = 250;
 
 interface MemoizedCommentProps {
   comment: Comment;
@@ -116,6 +116,11 @@ export default function Chat(props: ChatProps) {
   const [showModal, setShowModal] = useState(false);
   const [chatWidth, setChatWidth] = useState<number | undefined>(undefined);
   const [filterRegex, setFilterRegex] = useState<RegExp | null>(null);
+  const filterRegexRef = useRef<RegExp | null>(null);
+
+  useEffect(() => {
+    filterRegexRef.current = filterRegex;
+  }, [filterRegex]);
 
   useEffect(() => {
     const updateChatWidth = () => {
@@ -383,16 +388,18 @@ export default function Chat(props: ChatProps) {
     const seventv = (emotes as { seventv_emotes?: SevenTVEmote[] })?.seventv_emotes || [];
 
     ffz.forEach((emote: FfzEmote) => {
-      const code = typeof emote.code === 'string' ? emote.code : (emote.text as string);
-      const name = typeof emote.name === 'string' ? emote.name : code;
+      const code = emote.code || emote.text;
+      const name = emote.name || code;
       lookup.set(code || name, { ...emote, code, name, provider: 'FFZ' as EmoteProvider });
     });
     bttv.forEach((emote: BttvEmote) =>
       lookup.set(emote.code, { ...emote, name: emote.code, provider: 'BTTV' as EmoteProvider })
     );
-    seventv.forEach((emote: SevenTVEmote) =>
-      lookup.set(emote.code, { ...emote, name: emote.code, provider: '7TV' as EmoteProvider })
-    );
+    seventv.forEach((emote: SevenTVEmote) => {
+      const code = emote.code || '';
+      const name = emote.name || code;
+      lookup.set(name, { ...emote, code, name, provider: '7TV' as EmoteProvider });
+    });
 
     return lookup;
   }, [emotes]);
@@ -469,8 +476,7 @@ export default function Chat(props: ChatProps) {
           title={
             <div className="w-fit flex flex-col items-center">
               <img
-                crossOrigin="anonymous"
-                className="mb-[0.3rem] border-none max-w-full align-top"
+                className="mb-[0.3rem] border-none w-auto align-top"
                 src={getEmoteImageUrl(emote, emoteType, 2)}
                 alt={word}
               />
@@ -481,14 +487,11 @@ export default function Chat(props: ChatProps) {
         >
           <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
             <img
-              crossOrigin="anonymous"
-              className="border-none max-w-full min-h-[28px]"
+              className="border-none max-w-full min-h-[28px] h-auto w-auto"
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(emote, emoteType)}
               srcSet={getEmoteImageSrcSet(emote, emoteType)}
               alt={word}
-              decoding="async"
-              loading="lazy"
             />{' '}
           </span>
         </MessageTooltip>
@@ -509,8 +512,7 @@ export default function Chat(props: ChatProps) {
             <div className="w-fit flex flex-col items-center gap-2">
               <div className="flex flex-col items-center">
                 <img
-                  crossOrigin="anonymous"
-                  className="mb-[0.3rem] border-none max-w-full align-top"
+                  className="mb-[0.3rem] border-none w-auto align-top"
                   src={getEmoteImageUrl(normalEmote, normalType, 2)}
                   alt={normalEmote.code}
                 />
@@ -520,8 +522,7 @@ export default function Chat(props: ChatProps) {
               <hr className="border-[#d1d5db] w-full" />
               <div className="flex flex-col items-center">
                 <img
-                  crossOrigin="anonymous"
-                  className="mb-[0.3rem] border-none max-w-full align-top"
+                  className="mb-[0.3rem] border-none w-auto align-top"
                   src={getEmoteImageUrl(zwEmote, zwType, 2)}
                   alt={zwEmote.code}
                 />
@@ -533,24 +534,18 @@ export default function Chat(props: ChatProps) {
         >
           <span style={{ display: 'inline-block', position: 'relative', verticalAlign: 'middle' }}>
             <img
-              crossOrigin="anonymous"
-              className="border-none max-w-full min-h-[28px]"
+              className="border-none max-w-full min-h-[28px] h-auto w-auto"
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(normalEmote, normalType)}
               srcSet={getEmoteImageSrcSet(normalEmote, normalType)}
               alt={normalEmote.code}
-              decoding="async"
-              loading="lazy"
             />
             <img
-              crossOrigin="anonymous"
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-full border-none align-middle pointer-events-none"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-full border-none align-middle pointer-events-none h-auto w-auto"
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(zwEmote, zwType)}
               srcSet={getEmoteImageSrcSet(zwEmote, zwType)}
               alt={zwEmote.code}
-              decoding="async"
-              loading="lazy"
             />
           </span>
         </MessageTooltip>
@@ -559,45 +554,22 @@ export default function Chat(props: ChatProps) {
     [getEmoteImageUrl, getEmoteImageSrcSet]
   );
 
-  const renderZeroWidthEmote = useCallback(
-    (emote: EmoteEntry, word: string, key: string) => {
-      const emoteType = emote.provider;
+  const shouldFilterMessage = useCallback((message: string): boolean => {
+    const regex = filterRegexRef.current;
+    if (!regex) return false;
 
-      return (
-        <span style={{ display: 'inline-block' }}>
-          <img
-            key={key}
-            crossOrigin="anonymous"
-            className="absolute align-middle max-w-full border-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={{ verticalAlign: 'middle' }}
-            src={getEmoteImageUrl(emote, emoteType)}
-            srcSet={getEmoteImageSrcSet(emote, emoteType)}
-            alt={word}
-            decoding="async"
-            loading="lazy"
-          />
-        </span>
-      );
-    },
-    [getEmoteImageUrl, getEmoteImageSrcSet]
-  );
-
-  const shouldFilterMessage = useCallback(
-    (message: string): boolean => {
-      if (!filterRegex) return false;
-
-      filterRegex.lastIndex = 0;
-      return filterRegex.test(message);
-    },
-    [filterRegex]
-  );
+    regex.lastIndex = 0;
+    return regex.test(message);
+  }, []);
 
   const transformMessage = useCallback(
     (fragments: Comment['message'], keyPrefix: string): React.ReactNode | null => {
       if (!fragments) return null;
 
       const textFragments: (React.ReactElement | string)[] = [];
-      for (const fragment of fragments) {
+      for (let fIndex = 0; fIndex < fragments.length; fIndex++) {
+        const fragment = fragments[fIndex];
+
         if (fragment.emote || (fragment as unknown as { emoticon?: { emoticon_id: string } }).emoticon) {
           const emoteID = fragment.emote
             ? fragment.emote.emoteID
@@ -606,7 +578,7 @@ export default function Chat(props: ChatProps) {
             renderEmoteTooltip(
               { id: emoteID, code: fragment.text, provider: 'Twitch' as EmoteProvider },
               fragment.text,
-              `${keyPrefix}-emote-${fragment.text}-${Math.random().toString(36).slice(2, 11)}`
+              `${keyPrefix}-frag-${fIndex}-emote-${fragment.text}`
             ),
             ' '
           );
@@ -623,7 +595,7 @@ export default function Chat(props: ChatProps) {
 
                 if (isZeroWidth && lastNormalEmoteData) {
                   const storedEmote = lastNormalEmoteData as EmoteEntry;
-                  const combinedKey = `${keyPrefix}-combined-${storedEmote.code}-${word}-${i}`;
+                  const combinedKey = `${keyPrefix}-frag-${fIndex}-combined-${storedEmote.code}-${word}-${i}`;
                   const combined = renderCombinedEmoteTooltip(storedEmote, emote, combinedKey);
 
                   if (lastNormalEmoteIndex >= 0 && lastNormalEmoteIndex < textFragments.length) {
@@ -632,31 +604,43 @@ export default function Chat(props: ChatProps) {
                   lastNormalEmoteData = null;
                   lastNormalEmoteIndex = -1;
                 } else if (isZeroWidth) {
-                  const zeroWidthKey = `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`;
+                  const zeroWidthKey = `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`;
                   const zwSpan = (
-                    <span key={zeroWidthKey} style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                      <img
-                        crossOrigin="anonymous"
-                        className="border-none max-w-full min-h-[28px]"
-                        style={{ verticalAlign: 'middle' }}
-                        src={getEmoteImageUrl(emote, emote.provider)}
-                        srcSet={getEmoteImageSrcSet(emote, emote.provider)}
-                        alt={word}
-                        decoding="async"
-                        loading="lazy"
-                      />{' '}
-                    </span>
+                    <MessageTooltip
+                      key={zeroWidthKey}
+                      title={
+                        <div className="w-fit flex flex-col items-center">
+                          <img
+                            className="mb-[0.3rem] border-none w-auto align-top"
+                            src={getEmoteImageUrl(emote, emote.provider, 2)}
+                            alt={word}
+                          />
+                          <p className="block text-xs">{`Emote: ${emote.name || emote.code}`}</p>
+                          <p className="block text-xs">{`${emote.provider} Emotes`}</p>
+                        </div>
+                      }
+                    >
+                      <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+                        <img
+                          className="border-none max-w-full min-h-[28px] h-auto w-auto"
+                          style={{ verticalAlign: 'middle' }}
+                          src={getEmoteImageUrl(emote, emote.provider)}
+                          srcSet={getEmoteImageSrcSet(emote, emote.provider)}
+                          alt={word}
+                        />{' '}
+                      </span>
+                    </MessageTooltip>
                   );
                   textFragments.push(zwSpan, ' ');
                 } else {
-                  const normalKey = `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`;
+                  const normalKey = `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`;
                   const normalEmoteEl = renderEmoteTooltip(emote, word, normalKey);
                   lastNormalEmoteData = emote;
                   lastNormalEmoteIndex = textFragments.length;
                   textFragments.push(normalEmoteEl, ' ');
                 }
               } else {
-                const normalKey = `${keyPrefix}-emote-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`;
+                const normalKey = `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`;
                 const normalEmoteEl = renderEmoteTooltip(emote, word, normalKey);
                 lastNormalEmoteData = emote;
                 lastNormalEmoteIndex = textFragments.length;
@@ -666,19 +650,12 @@ export default function Chat(props: ChatProps) {
               lastNormalEmoteData = null;
               if (testEmoji(word)) {
                 textFragments.push(
-                  <Twemoji
-                    key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
-                    options={{ className: 'twemoji' }}
-                  >
+                  <Twemoji key={`${keyPrefix}-frag-${fIndex}-twemoji-${word}-${i}`} options={{ className: 'twemoji' }}>
                     {`${word} `}
                   </Twemoji>
                 );
               } else {
-                textFragments.push(
-                  <span
-                    key={`${keyPrefix}-twemoji-${word}-${i}-${Math.random().toString(36).slice(2, 11)}`}
-                  >{`${word} `}</span>
-                );
+                textFragments.push(<span key={`${keyPrefix}-frag-${fIndex}-text-${word}-${i}`}>{`${word} `}</span>);
               }
             }
           }
@@ -692,7 +669,6 @@ export default function Chat(props: ChatProps) {
       renderEmoteTooltip,
       renderCombinedEmoteTooltip,
       SEVENTV_isZeroWidth,
-      renderZeroWidthEmote,
       getEmoteImageUrl,
       getEmoteImageSrcSet,
     ]
@@ -724,25 +700,17 @@ export default function Chat(props: ChatProps) {
           key={`${keyPrefix}-badge-${badgeId}-${version}`}
           title={
             <div className="w-fit flex flex-col items-center">
-              <img
-                crossOrigin="anonymous"
-                className="mb-[0.3rem] border-none max-w-full align-top"
-                src={badgeVersion.image_url_4x}
-                alt=""
-              />
+              <img className="mb-[0.3rem] border-none max-w-full align-top" src={badgeVersion.image_url_4x} alt="" />
               <p className="block text-xs">{`${badgeId}`}</p>
             </div>
           }
         >
           <img
-            crossOrigin="anonymous"
             className="inline-block min-w-[1rem] h-[1rem] align-middle"
             style={{ margin: '0 0.2rem 0.1rem 0', backgroundPosition: '50%' }}
             srcSet={`${badgeVersion.image_url_1x} 1x, ${badgeVersion.image_url_2x} 2x, ${badgeVersion.image_url_4x} 4x`}
             src={badgeVersion.image_url_1x}
             alt=""
-            decoding="async"
-            loading="lazy"
           />
         </MessageTooltip>
       );
@@ -875,22 +843,6 @@ export default function Chat(props: ChatProps) {
     scrollToBottomSmooth();
   };
 
-  const handleImageLoad = useCallback(() => {
-    if (!isAtBottomRef.current || scrollingRef.current) return;
-
-    if (!isAutoScrolling.current) {
-      isAutoScrolling.current = true;
-      requestAnimationFrame(() => {
-        if (chatRef.current) {
-          chatRef.current.scrollTop = chatRef.current.scrollHeight;
-        }
-        setTimeout(() => {
-          isAutoScrolling.current = false;
-        }, 50);
-      });
-    }
-  }, []);
-
   useEffect(() => {
     if (!chatRef.current) return;
 
@@ -899,12 +851,12 @@ export default function Chat(props: ChatProps) {
 
     const resizeObserver = new ResizeObserver(() => {
       if (isAtBottomRef.current && !scrollingRef.current && chatRef.current) {
-        isAutoScrolling.current = true;
+        // 1. Instantly snap the scroll to the bottom without delays or timeouts
         chatRef.current.scrollTop = chatRef.current.scrollHeight;
 
-        setTimeout(() => {
-          isAutoScrolling.current = false;
-        }, 50);
+        // 2. Synchronously update our tracking refs so handleScroll doesn't trigger a false positive pause
+        lastScrollHeight.current = chatRef.current.scrollHeight;
+        lastScrollTop.current = chatRef.current.scrollTop;
       }
     });
 
@@ -957,7 +909,7 @@ export default function Chat(props: ChatProps) {
       return;
     }
 
-    const isScrollingUp = scrollTop < lastScrollTop.current;
+    const isScrollingUp = scrollTop < lastScrollTop.current - 10;
     const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
     const isAtBottom = distanceFromBottom <= SCROLL_TOLERANCE;
 
@@ -1081,7 +1033,6 @@ export default function Chat(props: ChatProps) {
               scrollToBottom={scrollToBottom}
               chatRef={chatRef}
               handleScroll={handleScroll}
-              handleImageLoad={handleImageLoad}
             />
           </div>
         </>

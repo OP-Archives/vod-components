@@ -33,9 +33,9 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
       const savedSettings = safeLocalStorage.getItem('chatSettings');
       if (savedSettings) {
         try {
-          const settings = JSON.parse(savedSettings);
-          if (settings.filterWords && Array.isArray(settings.filterWords)) {
-            setFilterWords(settings.filterWords as string[]);
+          const parsed = JSON.parse(savedSettings) || {};
+          if (parsed.filterWords && Array.isArray(parsed.filterWords)) {
+            setFilterWords(parsed.filterWords as string[]);
           }
         } catch (e) {
           console.error('Failed to parse chat settings from localStorage', e);
@@ -55,7 +55,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
     let settings: Record<string, unknown> = {};
     if (savedSettings) {
       try {
-        settings = JSON.parse(savedSettings);
+        settings = JSON.parse(savedSettings) || {};
       } catch (e) {
         console.error('Failed to parse chat settings from localStorage', e);
       }

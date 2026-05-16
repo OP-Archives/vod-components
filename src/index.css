@@ -158,4 +158,5 @@
 .chat-message-optimize {
   content-visibility: auto;
   contain-intrinsic-size: auto 32px;
+  overflow-anchor: none;
 }

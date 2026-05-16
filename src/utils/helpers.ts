@@ -32,15 +32,15 @@ export const toHMS = (secs: number): string => {
 };
 
 export const toHHMMSS = (secs: number): string => {
-  var sec_num = parseInt(secs.toString(), 10);
-  var hours = Math.floor(sec_num / 3600);
-  var minutes = Math.floor(sec_num / 60) % 60;
-  var seconds = sec_num % 60;
+  const sec_num = parseInt(secs.toString(), 10);
+  const h = Math.floor(sec_num / 3600);
+  const m = Math.floor(sec_num / 60) % 60;
+  const s = sec_num % 60;
 
-  return [hours, minutes, seconds]
-    .map((v) => (v < 10 ? '0' + v : v))
-    .filter((v, i) => v !== '00' || i > 0)
-    .join(':');
+  const mStr = m < 10 ? `0${m}` : m;
+  const sStr = s < 10 ? `0${s}` : s;
+
+  return h > 0 ? `${h}:${mStr}:${sStr}` : `${mStr}:${sStr}`;
 };
 
 export const sleep = (ms: number): Promise<void> => {

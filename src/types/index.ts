@@ -61,7 +61,8 @@ export interface EmotesResponse {
 
 export interface FfzEmote {
   id: number | string;
-  name: string;
+  code?: string;
+  name?: string;
   text: string;
   [key: string]: unknown;
 }
@@ -74,6 +75,7 @@ export interface BttvEmote {
 export interface SevenTVEmote {
   id: string;
   code: string;
+  name?: string;
   flags: number;
 }
 

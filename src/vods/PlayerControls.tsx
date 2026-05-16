@@ -71,10 +71,8 @@ export default function PlayerControls(props: PlayerControlsProps) {
   const closeSettingsTimerRef = useRef<number | null>(null);
   const progressBarRef = useRef<HTMLInputElement>(null);
   const volumeBarRef = useRef<HTMLInputElement>(null);
-  const [hoverTime, setHoverTime] = useState<number | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<number>(0);
-  const [hoverVolume, setHoverVolume] = useState<number | null>(null);
-  const [volTooltipPos, setVolTooltipPos] = useState<number>(0);
+  const progressTooltipRef = useRef<HTMLDivElement>(null);
+  const volumeTooltipRef = useRef<HTMLDivElement>(null);
   const isDraggingVolume = useRef(false);
 
   useEffect(() => {
@@ -184,12 +182,14 @@ export default function PlayerControls(props: PlayerControlsProps) {
     const pos = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
 
     const percentage = pos / rect.width;
-    setHoverTime(percentage * duration);
-
     const TOOLTIP_HALF_WIDTH = 30;
     const clampedPos = Math.max(TOOLTIP_HALF_WIDTH, Math.min(pos, rect.width - TOOLTIP_HALF_WIDTH));
 
-    setTooltipPos(clampedPos);
+    if (progressTooltipRef.current) {
+      progressTooltipRef.current.style.left = `${clampedPos}px`;
+      progressTooltipRef.current.innerText = formatTime(percentage * duration);
+      progressTooltipRef.current.style.opacity = '1';
+    }
   };
 
   const handleProgressTouchMove = (e: React.TouchEvent<HTMLInputElement>) => {
@@ -199,20 +199,22 @@ export default function PlayerControls(props: PlayerControlsProps) {
     const pos = Math.max(0, Math.min(e.touches[0].clientX - rect.left, rect.width));
 
     const percentage = pos / rect.width;
-    setHoverTime(percentage * duration);
-
     const TOOLTIP_HALF_WIDTH = 30;
     const clampedPos = Math.max(TOOLTIP_HALF_WIDTH, Math.min(pos, rect.width - TOOLTIP_HALF_WIDTH));
 
-    setTooltipPos(clampedPos);
+    if (progressTooltipRef.current) {
+      progressTooltipRef.current.style.left = `${clampedPos}px`;
+      progressTooltipRef.current.innerText = formatTime(percentage * duration);
+      progressTooltipRef.current.style.opacity = '1';
+    }
   };
 
   const handleProgressTouchEnd = () => {
-    setHoverTime(null);
+    if (progressTooltipRef.current) progressTooltipRef.current.style.opacity = '0';
   };
 
   const handleProgressMouseLeave = () => {
-    setHoverTime(null);
+    if (progressTooltipRef.current) progressTooltipRef.current.style.opacity = '0';
   };
 
   const handleVolumeMouseMove = (e: React.MouseEvent<HTMLInputElement>) => {
@@ -222,12 +224,14 @@ export default function PlayerControls(props: PlayerControlsProps) {
     const pos = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
 
     const percentage = pos / rect.width;
-    setHoverVolume(Math.round(percentage * 100));
-
     const TOOLTIP_HALF_WIDTH = 20;
     const clampedPos = Math.max(TOOLTIP_HALF_WIDTH, Math.min(pos, rect.width - TOOLTIP_HALF_WIDTH));
 
-    setVolTooltipPos(clampedPos);
+    if (volumeTooltipRef.current) {
+      volumeTooltipRef.current.style.left = `${clampedPos}px`;
+      volumeTooltipRef.current.innerText = `${Math.round(percentage * 100)}%`;
+      volumeTooltipRef.current.style.opacity = '1';
+    }
   };
 
   const handleVolumeTouchMove = (e: React.TouchEvent<HTMLInputElement>) => {
@@ -237,31 +241,33 @@ export default function PlayerControls(props: PlayerControlsProps) {
     const pos = Math.max(0, Math.min(e.touches[0].clientX - rect.left, rect.width));
 
     const percentage = pos / rect.width;
-    setHoverVolume(Math.round(percentage * 100));
-
     const TOOLTIP_HALF_WIDTH = 20;
     const clampedPos = Math.max(TOOLTIP_HALF_WIDTH, Math.min(pos, rect.width - TOOLTIP_HALF_WIDTH));
 
-    setVolTooltipPos(clampedPos);
+    if (volumeTooltipRef.current) {
+      volumeTooltipRef.current.style.left = `${clampedPos}px`;
+      volumeTooltipRef.current.innerText = `${Math.round(percentage * 100)}%`;
+      volumeTooltipRef.current.style.opacity = '1';
+    }
   };
 
   const handleVolumeTouchEnd = () => {
     isDraggingVolume.current = false;
-    setHoverVolume(null);
+    if (volumeTooltipRef.current) volumeTooltipRef.current.style.opacity = '0';
   };
 
   const handleVolumeMouseLeave = () => {
     isDraggingVolume.current = false;
-    setHoverVolume(null);
-  };
-
-  const handleVolumeMouseDown = () => {
-    isDraggingVolume.current = true;
+    if (volumeTooltipRef.current) volumeTooltipRef.current.style.opacity = '0';
   };
 
   const handleVolumeMouseUp = () => {
     isDraggingVolume.current = false;
-    setHoverVolume(null);
+    if (volumeTooltipRef.current) volumeTooltipRef.current.style.opacity = '0';
+  };
+
+  const handleVolumeMouseDown = () => {
+    isDraggingVolume.current = true;
   };
 
   const volumeGradient = `linear-gradient(to right, white ${isMuted ? 0 : volume}%, rgba(255,255,255,0.3) ${isMuted ? 0 : volume}%)`;
@@ -283,14 +289,11 @@ export default function PlayerControls(props: PlayerControlsProps) {
         style={{ gap: '4px' }}
       >
         <div className="flex items-center w-full group relative">
-          {hoverTime !== null && (
-            <div
-              className="absolute bottom-full mb-3 bg-[#18181b] border border-[#303032] px-2 py-1 text-xs font-medium text-white rounded shadow-lg pointer-events-none transform -translate-x-1/2 whitespace-nowrap"
-              style={{ left: `${tooltipPos}px` }}
-            >
-              {formatTime(hoverTime)}
-            </div>
-          )}
+          <div
+            ref={progressTooltipRef}
+            className="absolute bottom-full mb-3 bg-[#18181b] border border-[#303032] px-2 py-1 text-xs font-medium text-white rounded shadow-lg pointer-events-none transform -translate-x-1/2 whitespace-nowrap opacity-0 transition-opacity"
+            style={{ left: '0px' }}
+          />
           <input
             ref={progressBarRef}
             type="range"
@@ -334,14 +337,11 @@ export default function PlayerControls(props: PlayerControlsProps) {
               </button>
 
               <div className="relative h-6 flex items-center">
-                {hoverVolume !== null && (
-                  <div
-                    className="absolute bottom-full mb-3 bg-[#18181b] border border-[#303032] px-2 py-1 text-xs font-medium text-white rounded shadow-lg pointer-events-none transform -translate-x-1/2 whitespace-nowrap"
-                    style={{ left: `${volTooltipPos}px` }}
-                  >
-                    {hoverVolume}%
-                  </div>
-                )}
+                <div
+                  ref={volumeTooltipRef}
+                  className="absolute bottom-full mb-3 bg-[#18181b] border border-[#303032] px-2 py-1 text-xs font-medium text-white rounded shadow-lg pointer-events-none transform -translate-x-1/2 whitespace-nowrap opacity-0 transition-opacity"
+                  style={{ left: '0px' }}
+                />
                 <input
                   ref={volumeBarRef}
                   type="range"

@@ -58,12 +58,6 @@ export default function BaseVod(props: BaseVodProps) {
   const [theatreMode, setTheatreMode] = useState(false);
   const [collapseOpen, setCollapseOpen] = useState(true);
 
-  useEffect(() => {
-    setCollapseOpen(!theatreMode);
-  }, [theatreMode]);
-
-  if (!vod) return null;
-
   const [chapter, setChapter] = useState<
     { name: string; image: string; start: number; duration: number; end: number } | null | undefined
   >(undefined);
@@ -72,6 +66,12 @@ export default function BaseVod(props: BaseVodProps) {
   const lastSaveRef = useRef<number>(0);
 
   useEffect(() => {
+    if (!vod) return;
+    setCollapseOpen(!theatreMode);
+  }, [theatreMode, vod]);
+
+  useEffect(() => {
+    if (!vod) return;
     setChapter(vod.chapters.length > 0 ? vod.chapters[0] : null);
   }, [vod]);
 
@@ -138,6 +138,8 @@ export default function BaseVod(props: BaseVodProps) {
       console.error('Failed to copy to clipboard:', err);
     }
   };
+
+  if (!vod) return null;
 
   return (
     <div
