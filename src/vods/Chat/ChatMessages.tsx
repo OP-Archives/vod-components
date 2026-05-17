@@ -34,7 +34,7 @@ export default function ChatMessages(props: ChatMessagesProps) {
         style={{ height: '100%', overflowX: 'hidden' }}
       >
         <div className="flex justify-end flex-col p-0">
-          <div className="flex flex-wrap min-h-0 items-end">{shownMessages}</div>
+          <div className="flex flex-wrap min-h-0">{shownMessages}</div>
         </div>
       </SimpleBar>
       {scrolling && (

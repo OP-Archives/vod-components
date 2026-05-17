@@ -160,3 +160,7 @@
   contain-intrinsic-size: auto 32px;
   overflow-anchor: none;
 }
+
+.chat-msg-lineheight {
+  line-height: 20px;
+}

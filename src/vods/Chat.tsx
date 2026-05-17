@@ -48,21 +48,21 @@ const MemoizedComment = memo(function MemoizedComment({
   transformMessage,
 }: MemoizedCommentProps) {
   return (
-    <div className="chat-message-optimize w-full px-1 pt-1 pb-1 text-[16px] leading-relaxed break-words hover:bg-white/5 transition-colors flex items-baseline">
-      {showTimestamp && (
-        <div className="min-w-0 mr-2 shrink-0">
-          <span className="text-xs text-[#adadb8] align-middle">{toHHMMSS(comment.content_offset_seconds)}</span>
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        {comment.user_badges && transformBadges(comment.user_badges, `comment-${comment.id}`)}
-        <span className="font-bold align-middle" style={{ color: adjustUsernameColor(comment.user_color) }}>
-          {comment.display_name}
-        </span>
-        <span className="align-middle text-[#efeff1]">
-          <span>: </span>
+    <div className="chat-message-optimize w-full hover:bg-white/5 transition-colors flex">
+      <div className="px-1 pt-1 flex items-baseline chat-msg-lineheight">
+        {showTimestamp && (
+          <div className="min-w-0 mr-2 shrink-0">
+            <span className="text-xs text-[#adadb8] align-middle">{toHHMMSS(comment.content_offset_seconds)}</span>
+          </div>
+        )}
+        <div className="min-w-0 flex-1 break-words text-[14px]">
+          {comment.user_badges && transformBadges(comment.user_badges, `comment-${comment.id}`)}
+          <span className="font-bold" style={{ color: adjustUsernameColor(comment.user_color) }}>
+            {comment.display_name}
+          </span>
+          <span className="text-[#efeff1]">: </span>
           {transformMessage(comment.message, `comment-${comment.id}`)}
-        </span>
+        </div>
       </div>
     </div>
   );
