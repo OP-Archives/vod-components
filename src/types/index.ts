@@ -13,8 +13,8 @@ export interface VOD {
   vod_uploads: VODUpload[];
   chapters: Chapter[];
   games: GameEntry[];
-  prev: VODNavigation | null;
-  next: VODNavigation | null;
+  prev: VODNavigation[];
+  next: VODNavigation[];
 }
 
 export interface VODUpload {
@@ -48,7 +48,7 @@ export interface GameEntry {
 export interface VODNavigation {
   id: number;
   platform: string;
-  platformVodId: string;
+  platform_vod_id: string;
 }
 
 // Emotes types

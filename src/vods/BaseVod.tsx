@@ -236,16 +236,22 @@ export default function BaseVod(props: BaseVodProps) {
                 </select>
               )}
             </div>
-            {vod.prev && (
+            {vod.prev[0] && (
               <CustomWidthTooltip title="Previous">
-                <a href={`/${pathPrefix}/${vod.prev.id}`} className="text-white hover:text-gray-300 transition-colors">
+                <a
+                  href={`/${pathPrefix}/${vod.prev[0].id}`}
+                  className="text-white hover:text-gray-300 transition-colors"
+                >
                   <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 </a>
               </CustomWidthTooltip>
             )}
-            {vod.next && (
+            {vod.next[0] && (
               <CustomWidthTooltip title="Next">
-                <a href={`/${pathPrefix}/${vod.next.id}`} className="text-white hover:text-gray-300 transition-colors">
+                <a
+                  href={`/${pathPrefix}/${vod.next[0].id}`}
+                  className="text-white hover:text-gray-300 transition-colors"
+                >
                   <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </a>
               </CustomWidthTooltip>

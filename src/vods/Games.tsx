@@ -138,17 +138,17 @@ export default function Games(props: GamesProps) {
         {logo && <img src={logo} alt="" className="h-auto max-w-[200px]" />}
         <p className="text-lg text-gray-400">No games found</p>
         <div className="flex gap-2">
-          {vod.prev && (
+          {vod.prev[0] && (
             <a
-              href={`/games/${vod.prev.id}`}
+              href={`/games/${vod.prev[0].id}`}
               className="text-white hover:text-gray-300 transition-colors flex items-center gap-1"
             >
               <span>Previous Game</span>
             </a>
           )}
-          {vod.next && (
+          {vod.next[0] && (
             <a
-              href={`/games/${vod.next.id}`}
+              href={`/games/${vod.next[0].id}`}
               className="text-white hover:text-gray-300 transition-colors flex items-center gap-1"
             >
               <span>Next Game</span>
