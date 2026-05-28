@@ -137,7 +137,7 @@ export interface PartInfo {
   timestamp: number;
 }
 
-export type EmoteProvider = 'FFZ' | 'BTTV' | '7TV' | 'Twitch';
+export type EmoteProvider = 'FFZ' | 'BTTV' | '7TV' | 'Twitch' | 'Kick';
 
 export type PlayerState = -1 | 0 | 1 | 2 | 3 | 5;
 

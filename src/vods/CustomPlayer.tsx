@@ -80,22 +80,9 @@ export default function Player(props: PlayerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [playIconSize, setPlayIconSize] = useState(96);
 
   useEffect(() => {
     setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches);
-    const updatePlayIconSize = () => {
-      if (window.innerWidth <= 480) {
-        setPlayIconSize(48);
-      } else if (window.innerWidth <= 768) {
-        setPlayIconSize(64);
-      } else {
-        setPlayIconSize(96);
-      }
-    };
-    updatePlayIconSize();
-    window.addEventListener('resize', updatePlayIconSize);
-    return () => window.removeEventListener('resize', updatePlayIconSize);
   }, []);
 
   useEffect(() => {
@@ -456,7 +443,7 @@ export default function Player(props: PlayerProps) {
             isPlaying ? 'opacity-0 pointer-events-none delay-75' : 'opacity-100 delay-75'
           }`}
         >
-          <Play className="text-white drop-shadow-2xl" size={playIconSize} />
+          <Play className="h-[15%] max-h-[72px] min-h-[32px] w-[15%] max-w-[72px] min-w-[32px] text-white drop-shadow-2xl" />
         </div>
 
         <PlayerControls

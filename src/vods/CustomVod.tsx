@@ -172,6 +172,7 @@ export default function CustomVod(props: CustomVodProps) {
           setUserChatDelay={setUserChatDelay}
           isYoutubeVod={false}
           playerState={playerState}
+          platform={vod?.platform ?? ''}
           twitchId={twitchId}
           channel={channel}
         />

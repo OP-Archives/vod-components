@@ -220,6 +220,7 @@ export default function Games(props: GamesProps) {
           games={games}
           setUserChatDelay={setUserChatDelay}
           playerState={playerState}
+          platform={vod?.platform ?? ''}
           twitchId={twitchId}
           channel={channel}
         />

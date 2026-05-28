@@ -28,6 +28,7 @@ const BASE_TWITCH_CDN = 'https://static-cdn.jtvnw.net';
 const BASE_FFZ_EMOTE_CDN = 'https://cdn.frankerfacez.com/emote';
 const BASE_BTTV_EMOTE_CDN = 'https://cdn.betterttv.net/emote';
 const BASE_7TV_EMOTE_CDN = 'https://cdn.7tv.app/emote';
+const BASE_KICK_EMOTE_CDN = 'https://files.kick.com/emotes';
 const BASE_FFZ_EMOTE_API = 'https://api.frankerfacez.com/v1';
 const BASE_BTTV_EMOTE_API = 'https://api.betterttv.net/3';
 const BASE_7TV_EMOTE_API = 'https://7tv.io/v3';
@@ -79,6 +80,7 @@ interface ChatProps {
   setPart?: (part: PartInfo | null) => void;
   games?: GameEntry[];
   isYoutubeVod?: boolean;
+  platform: string;
   playerState: PlayerState;
   setUserChatDelay: (v: number) => void;
   twitchId: number;
@@ -99,6 +101,7 @@ export default function Chat(props: ChatProps) {
     isYoutubeVod,
     playerState,
     setUserChatDelay,
+    platform,
     twitchId,
     archiveApiBase,
     channel,
@@ -379,7 +382,7 @@ export default function Chat(props: ChatProps) {
     return () => {
       abortController.abort();
     };
-  }, [vodId, archiveApiBase, twitchId, channel]);
+  }, [vodId, archiveApiBase, twitchId, platform, channel]);
 
   const emoteLookup = useMemo(() => {
     const lookup = new Map<string, EmoteEntry>();
@@ -443,6 +446,8 @@ export default function Chat(props: ChatProps) {
         return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/${size === 4 ? 2 : size}x`;
       case '7TV':
         return `${BASE_7TV_EMOTE_CDN}/${emote.id}/${size}x.webp`;
+      case 'Kick':
+        return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize`;
       default:
         return `${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/${size}.0`;
     }
@@ -456,6 +461,8 @@ export default function Chat(props: ChatProps) {
         return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/1x 1x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/2x 2x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/3x 3x`;
       case '7TV':
         return `${BASE_7TV_EMOTE_CDN}/${emote.id}/1x.webp 1x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/2x.webp 2x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/3x.webp 3x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/4x.webp 4x`;
+      case 'Kick':
+        return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize 1x`;
       default:
         return `${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/1.0 1x, ${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/2.0 2x, ${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/3.0 4x`;
     }
@@ -464,6 +471,12 @@ export default function Chat(props: ChatProps) {
   const SEVENTV_isZeroWidth = useCallback((emote: EmoteEntry): boolean => {
     const ZERO_WIDTH = 1 << 8;
     return (emote.flags && ZERO_WIDTH) !== 0;
+  }, []);
+
+  const getEmoteImageClassName = useCallback((type: EmoteProvider): string => {
+    return type === 'Kick'
+      ? 'h-auto min-h-[28px] max-h-[32px] w-auto max-w-full border-none'
+      : 'h-auto min-h-[28px] w-auto max-w-full border-none';
   }, []);
 
   const renderEmoteTooltip = useCallback(
@@ -487,7 +500,7 @@ export default function Chat(props: ChatProps) {
         >
           <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
             <img
-              className="border-none max-w-full min-h-[28px] h-auto w-auto"
+              className={getEmoteImageClassName(emoteType)}
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(emote, emoteType)}
               srcSet={getEmoteImageSrcSet(emote, emoteType)}
@@ -534,14 +547,14 @@ export default function Chat(props: ChatProps) {
         >
           <span style={{ display: 'inline-block', position: 'relative', verticalAlign: 'middle' }}>
             <img
-              className="border-none max-w-full min-h-[28px] h-auto w-auto"
+              className={getEmoteImageClassName(normalType)}
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(normalEmote, normalType)}
               srcSet={getEmoteImageSrcSet(normalEmote, normalType)}
               alt={normalEmote.code}
             />
             <img
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-full border-none align-middle pointer-events-none h-auto w-auto"
+              className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${getEmoteImageClassName(zwType)} border-none align-middle pointer-events-none`}
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(zwEmote, zwType)}
               srcSet={getEmoteImageSrcSet(zwEmote, zwType)}
@@ -551,7 +564,7 @@ export default function Chat(props: ChatProps) {
         </MessageTooltip>
       );
     },
-    [getEmoteImageUrl, getEmoteImageSrcSet]
+    [getEmoteImageUrl, getEmoteImageSrcSet, getEmoteImageClassName]
   );
 
   const shouldFilterMessage = useCallback((message: string): boolean => {
@@ -576,7 +589,11 @@ export default function Chat(props: ChatProps) {
             : (fragment as unknown as { emoticon: { emoticon_id: string } }).emoticon.emoticon_id;
           textFragments.push(
             renderEmoteTooltip(
-              { id: emoteID, code: fragment.text, provider: 'Twitch' as EmoteProvider },
+              {
+                id: emoteID,
+                code: fragment.text,
+                provider: (platform.charAt(0).toUpperCase() + platform.slice(1)) as EmoteProvider,
+              },
               fragment.text,
               `${keyPrefix}-frag-${fIndex}-emote-${fragment.text}`
             ),
@@ -671,6 +688,7 @@ export default function Chat(props: ChatProps) {
       SEVENTV_isZeroWidth,
       getEmoteImageUrl,
       getEmoteImageSrcSet,
+      platform,
     ]
   );
 
