@@ -207,14 +207,8 @@ export default function BaseVod(props: BaseVodProps) {
               {isYoutubeVod && (
                 <select
                   value={part!.part - 1}
-                  onChange={(e) => handlePartChange?.(e as unknown as ChangeEvent<HTMLSelectElement>)}
-                  className="bg-[#18181b] border border-[#303032] rounded-md px-2 h-7 sm:h-9 text-xs sm:text-sm text-white appearance-none pr-6 sm:pr-8"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: 'right 0.5rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.25em 1.25em',
-                  }}
+                  onChange={(e) => handlePartChange?.(e)}
+                  className="bg-[#18181b] border border-[#303032] rounded-md px-2 h-7 sm:h-9 text-xs sm:text-sm text-white"
                 >
                   {youtube!.map((data, i) => (
                     <option key={data.id} value={i}>
