@@ -10,19 +10,27 @@ interface ChatMessagesProps {
   scrollToBottom: () => void;
   chatRef: React.MutableRefObject<HTMLElement | null>;
   handleScroll: () => void;
+  isLoading: boolean;
+  commentsCount: number;
 }
 
 export default function ChatMessages(props: ChatMessagesProps) {
-  const { comments, shownMessages, scrolling, scrollToBottom, chatRef, handleScroll } = props;
+  const { shownMessages, scrolling, scrollToBottom, chatRef, handleScroll, isLoading, commentsCount } = props;
 
-  const commentsArray = Array.isArray(comments) ? comments : comments.current;
+  if (commentsCount === 0) {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-full w-full flex-col">
+          <div className="flex flex-col justify-center items-center">
+            <div className="spinner mt-2" />
+          </div>
+        </div>
+      );
+    }
 
-  if (commentsArray && commentsArray.length === 0) {
     return (
       <div className="flex justify-center items-center h-full w-full flex-col">
-        <div className="flex flex-col justify-center items-center">
-          <div className="spinner mt-2" />
-        </div>
+        <p className="text-gray-400 text-sm">No messages</p>
       </div>
     );
   }

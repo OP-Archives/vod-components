@@ -115,6 +115,8 @@ export default function Chat(props: ChatProps) {
     seventv_emotes: [],
   });
   const [scrolling, setScrolling] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [commentsCount, setCommentsCount] = useState(0);
   const [showTimestamp, setShowTimestamp] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [chatWidth, setChatWidth] = useState<number | undefined>(undefined);
@@ -973,11 +975,15 @@ export default function Chat(props: ChatProps) {
         .then((data) => {
           comments.current = data.comments;
           cursor.current = data.cursor;
+          setCommentsCount(data.comments.length);
         })
         .catch((e) => {
           if (e.name !== 'AbortError') {
             console.error(e);
           }
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
     };
 
@@ -995,6 +1001,8 @@ export default function Chat(props: ChatProps) {
             comments.current = [];
             cursor.current = null;
             setShownMessages([]);
+            setCommentsCount(0);
+            setIsLoading(true);
             fetchComments(time);
             loopCbRef.current?.();
           }, 300);
@@ -1038,6 +1046,8 @@ export default function Chat(props: ChatProps) {
           >
             <ChatMessages
               comments={comments}
+              isLoading={isLoading}
+              commentsCount={commentsCount}
               shownMessages={shownMessages.map((comment) => (
                 <MemoizedComment
                   key={comment.id}
