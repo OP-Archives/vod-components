@@ -98,6 +98,8 @@ export default function CustomVod(props: CustomVodProps) {
     }
   }, [vodId, location.search]);
 
+  const lastSaveRef = useRef<number>(0);
+
   useEffect(() => {
     if (playerState === -1 || !vodId || !playerRef.current) return;
 
@@ -106,13 +108,37 @@ export default function CustomVod(props: CustomVodProps) {
         clearResumePosition(vodId, 'vod_');
         break;
       case 2:
-        const currentTime = playerRef.current.currentTime;
-        if (currentTime !== null && currentTime > 0) saveResumePosition(vodId, currentTime, 'vod_');
+        const pauseTime = playerRef.current.currentTime;
+        if (pauseTime !== null && pauseTime > 0) saveResumePosition(vodId, pauseTime, 'vod_');
         break;
       default:
         break;
     }
     return;
+  }, [playerState, vodId, playerRef]);
+
+  useEffect(() => {
+    if (playerState !== 1 || !vodId || !playerRef.current) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      if (now - lastSaveRef.current > 10000) {
+        const t = playerRef.current!.currentTime;
+        if (t > 0) {
+          saveResumePosition(vodId, t, 'vod_');
+          lastSaveRef.current = now;
+        }
+      }
+    }, 1000);
+
+    // Save immediately on play
+    const t = playerRef.current.currentTime;
+    if (t > 0) {
+      saveResumePosition(vodId, t, 'vod_');
+      lastSaveRef.current = Date.now();
+    }
+
+    return () => clearInterval(interval);
   }, [playerState, vodId, playerRef]);
 
   if (vod === undefined) return <Loading logo={logo} />;

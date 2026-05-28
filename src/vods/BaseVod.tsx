@@ -1,11 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useState, useRef, ChangeEvent } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { VOD, VODUpload, GameEntry, PartInfo, PlayerState, PlayerSettings } from '../types';
 import CustomWidthTooltip from '../utils/CustomToolTip';
 import { toHMS } from '../utils/helpers';
 import { loadPlayerSettings, savePlayerSettings } from '../utils/playerSettings';
-import { saveResumePosition } from '../utils/positionStorage';
 import CustomPlayer from './CustomPlayer';
 import GamesMenu from './GamesMenu';
 import VodChapters from './VodChapters';
@@ -63,7 +62,6 @@ export default function BaseVod(props: BaseVodProps) {
   >(undefined);
   const [currentTime, setCurrentTime] = useState<number | undefined>(undefined);
   const [playerSettings, setPlayerSettings] = useState<PlayerSettings>(() => loadPlayerSettings());
-  const lastSaveRef = useRef<number>(0);
 
   useEffect(() => {
     if (!vod) return;
@@ -90,16 +88,6 @@ export default function BaseVod(props: BaseVodProps) {
       if (currentChapter) {
         setChapter(currentChapter);
       }
-    }
-
-    const now = Date.now();
-    if (now - lastSaveRef.current > 10000) {
-      const currentGame = games?.[part!.part - 1];
-      const saveId = currentGame ? currentGame.id : vod.id;
-      const prefix = currentGame ? 'game_' : 'vod_';
-      saveResumePosition(String(saveId), currentTime, prefix);
-
-      lastSaveRef.current = now;
     }
   }, [currentTime, vod, playerRef, games, part]);
 

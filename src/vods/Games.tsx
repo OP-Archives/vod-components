@@ -92,26 +92,58 @@ export default function Games(props: GamesProps) {
     return;
   }, [vod, location.search]);
 
-  useEffect(() => {
-    if (playerState === -1 || !playerRef.current) return;
+  const lastSaveRef = useRef<number>(0);
 
-    const currentGame = games?.[part!.part - 1];
+  useEffect(() => {
+    if (playerState === -1 || !playerRef.current || !part || !games) return;
+
+    const currentGame = games[part.part - 1];
+    if (!currentGame) return;
 
     switch (playerState) {
       case 0:
-        clearResumePosition(currentGame!.id, 'game_');
+        clearResumePosition(currentGame.id, 'game_');
         break;
       case 2:
         const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
-        const currentTime = ytP?.getCurrentTime?.() ?? 0;
-        if (currentTime > 0) {
-          saveResumePosition(currentGame!.id, currentTime, 'game_');
+        const pauseTime = ytP?.getCurrentTime?.() ?? 0;
+        if (pauseTime > 0) {
+          saveResumePosition(currentGame.id, pauseTime, 'game_');
         }
         break;
       default:
         break;
     }
     return;
+  }, [playerState, games, playerRef, part]);
+
+  useEffect(() => {
+    if (playerState !== 1 || !playerRef.current || !part || !games) return;
+
+    const currentGame = games[part.part - 1];
+    if (!currentGame) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      if (now - lastSaveRef.current > 10000) {
+        const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
+        const t = ytP?.getCurrentTime?.() ?? 0;
+        if (t > 0) {
+          saveResumePosition(currentGame.id, t, 'game_');
+          lastSaveRef.current = now;
+        }
+      }
+    }, 1000);
+
+    // Save immediately on play
+    const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
+    const t = ytP?.getCurrentTime?.() ?? 0;
+    if (t > 0) {
+      saveResumePosition(currentGame.id, t, 'game_');
+      lastSaveRef.current = Date.now();
+    }
+
+    return () => clearInterval(interval);
   }, [playerState, games, playerRef, part]);
 
   const handlePartChange = (evt: ChangeEvent<HTMLSelectElement>) => {
