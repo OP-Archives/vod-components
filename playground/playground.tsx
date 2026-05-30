@@ -11,13 +11,13 @@ function PlaygroundContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { vodId: routeVodId } = useParams();
-  const vodId = routeVodId || '1673';
+  const vodId = routeVodId || '1444';
   const [tab, setTab] = useState(() => {
     const path = location.pathname.split('/')[1];
     return tabs.indexOf(path as (typeof tabs)[number]) >= 0 ? tabs.indexOf(path as (typeof tabs)[number]) : 0;
   });
   const [archiveApiBase, setArchiveApiBase] = useState('https://archive.overpowered.tv/api/v1');
-  const [channel, setChannel] = useState('xqc');
+  const [channel, setChannel] = useState('moonmoon');
   const [logo, setLogo] = useState('https://xqc.wtf/assets/logo-D84ej4L_.png');
   const [twitchId, setTwitchId] = useState('71092938');
   const [showSidebar, setShowSidebar] = useState(() => window.innerWidth >= 768);
@@ -33,7 +33,7 @@ function PlaygroundContent() {
   }, []);
   const [vodIdInput, setVodIdInput] = useState(vodId);
 
-  const [youtubeType, setYoutubeType] = useState<'live' | 'vod' | ''>('vod');
+  const [youtubeType, setYoutubeType] = useState<'live' | 'vod' | ''>('');
   const [youtubeDefaultDelay, setYoutubeDefaultDelay] = useState(0);
   const [youtubeOrigin, setYoutubeOrigin] = useState(window.location.origin);
   const [customCdnBase, setCustomCdnBase] = useState('https://cdn.xqc.wtf');
