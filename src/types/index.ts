@@ -99,6 +99,7 @@ export interface Comment {
 export interface MessageFragment {
   text: string;
   emote: { id: string; from: number; emoteID: string } | null;
+  emoticon?: { emoticon_id: string };
 }
 
 export interface UserBadge {

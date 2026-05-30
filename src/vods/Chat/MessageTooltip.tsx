@@ -34,7 +34,7 @@ export default function MessageTooltip({ children, title }: { children: React.Re
               transform: 'translate(-50%, calc(-100% - 8px))',
             }}
           >
-            <div className="rounded-lg border border-gray-700 bg-white p-2 text-sm text-gray-900 shadow-lg w-fit animate-[fadeIn_0.2s_ease-out]">
+            <div className="w-fit animate-[fadeIn_0.2s_ease-out] rounded-lg border border-[#222230] bg-[#16161e] p-2 text-sm text-[#f0f0f5] shadow-lg">
               {title}
             </div>
           </div>,

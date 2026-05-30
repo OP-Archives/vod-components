@@ -1,6 +1,11 @@
+import twemoji from '@twemoji/api';
 import { useEffect, useRef } from 'react';
 import type { PropsWithChildren } from 'react';
-import twemoji from 'twemoji';
+
+twemoji.base = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/';
+twemoji.ext = '.svg';
+
+const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
 
 interface TwemojiProps extends PropsWithChildren {
   options?: Record<string, unknown>;
@@ -24,6 +29,34 @@ export function Twemoji({ children, options = {} }: TwemojiProps) {
   );
 }
 
-// vite-plugin-dts doesn't resolve global.d.ts twemoji declarations; tsc handles it fine
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-export const testEmoji = (text: string): boolean => (twemoji as any).test(text);
+export const emojiTest = (char: string): boolean => {
+  emojiRegex.lastIndex = 0;
+  return emojiRegex.test(char);
+};
+
+export const extractEmojis = (text: string): { text?: string; emoji?: string }[] => {
+  const result: { text?: string; emoji?: string }[] = [];
+  const codepoints = [...text];
+  let i = 0;
+  while (i < codepoints.length) {
+    const char = codepoints[i];
+    if (emojiTest(char)) {
+      let emoji = char;
+      let j = i + 1;
+      while (j < codepoints.length && emojiTest(codepoints[j])) {
+        emoji += codepoints[j];
+        j++;
+      }
+      result.push({ emoji });
+      i = j;
+    } else {
+      let textPart = '';
+      while (i < codepoints.length && !emojiTest(codepoints[i])) {
+        textPart += codepoints[i];
+        i++;
+      }
+      if (textPart) result.push({ text: textPart });
+    }
+  }
+  return result;
+};

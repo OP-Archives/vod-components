@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, ChangeEvent } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
+import { usePlayerLayout } from '../hooks/usePlayerLayout';
 import type { VOD, VODUpload, PartInfo, PlayerState } from '../types';
 import { convertTimestamp } from '../utils/helpers';
 import Loading from '../utils/Loading';
 import NotFound from '../utils/NotFound';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
 import BaseVod from './BaseVod';
-import Chat from './Chat';
+import type { ChatProps } from './Chat';
+import PlayerLayout from './PlayerLayout';
 
 export interface YoutubeVodProps {
   type?: string;
@@ -16,6 +18,7 @@ export interface YoutubeVodProps {
   logo: string;
   twitchId: number;
   origin?: string;
+  tenant: string;
 }
 
 export default function YoutubeVod(props: YoutubeVodProps) {
@@ -29,15 +32,8 @@ export default function YoutubeVod(props: YoutubeVodProps) {
   const [userChatDelay, setUserChatDelay] = useState(0);
   const [playerState, setPlayerState] = useState<PlayerState>(-1);
   const playerRef = useRef<HTMLVideoElement | null>(null);
-  const [isPortrait, setIsPortrait] = useState(false);
 
-  useEffect(() => {
-    const mql = window.matchMedia('(orientation: portrait)');
-    setIsPortrait(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsPortrait(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
+  const { isPortrait, chatOnLeft, setChatOnLeft } = usePlayerLayout();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -88,7 +84,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
     const partQuery = search.get('part');
     let tmpPart = partQuery !== null ? parseInt(partQuery) : 1;
     if (timestamp === 0) {
-      const savedPosition = getResumePosition(vodId);
+      const savedPosition = getResumePosition(vodId, 'vod_', props.tenant);
       if (savedPosition !== null && savedPosition > 0) {
         console.info(`Resuming Playback from ${savedPosition}`);
         timestamp = savedPosition;
@@ -128,7 +124,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
     switch (playerState) {
       case 0:
         if (part.part === youtube.length) {
-          clearResumePosition(vodId, 'vod_');
+          clearResumePosition(vodId, 'vod_', props.tenant);
         }
         break;
       case 2:
@@ -141,7 +137,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
               pauseTime += video.duration ?? 0;
             }
           }
-          saveResumePosition(vodId, pauseTime, 'vod_');
+          saveResumePosition(vodId, pauseTime, 'vod_', props.tenant);
         }
         break;
       default:
@@ -163,7 +159,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
             if ((video.part ?? 0) >= part.part) break;
             t += video.duration ?? 0;
           }
-          saveResumePosition(vodId, t, 'vod_');
+          saveResumePosition(vodId, t, 'vod_', props.tenant);
           lastSaveRef.current = now;
         }
       }
@@ -177,7 +173,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
         if ((video.part ?? 0) >= part.part) break;
         t += video.duration ?? 0;
       }
-      saveResumePosition(vodId, t, 'vod_');
+      saveResumePosition(vodId, t, 'vod_', props.tenant);
       lastSaveRef.current = Date.now();
     }
 
@@ -198,44 +194,48 @@ export default function YoutubeVod(props: YoutubeVodProps) {
 
   if (youtube.length === 0) return <NotFound channel={channel} logo={logo} />;
 
+  const chatProps: ChatProps = {
+    isPortrait,
+    vodId: vodId!,
+    playerRef,
+    delay,
+    userChatDelay,
+    setUserChatDelay,
+    youtube,
+    part,
+    setPart,
+    playerState,
+    platform: vod?.platform ?? '',
+    twitchId,
+    archiveApiBase,
+    channel,
+    isYoutubeVod: true,
+    chatOnLeft,
+    setChatOnLeft,
+  };
+
   return (
-    <div className="h-full w-full">
-      <div className={`flex ${isPortrait ? 'flex-col' : 'flex-row'} h-full w-full min-w-0 overflow-hidden`}>
-        <div className={`min-w-0 min-h-0 overflow-hidden ${isPortrait ? 'w-full flex-shrink-0' : 'h-full flex-1'}`}>
-          <BaseVod
-            {...props}
-            logo={logo}
-            handlePartChange={handlePartChange}
-            youtube={youtube}
-            isYoutubeVod={true}
-            playerRef={playerRef}
-            part={part}
-            setPart={setPart}
-            vod={vod}
-            setPlayerState={setPlayerState}
-            origin={origin}
-            isPortrait={isPortrait}
-          />
-        </div>
-        {isPortrait && <hr className="border-[#303032]" />}
-        <Chat
-          archiveApiBase={archiveApiBase}
-          isPortrait={isPortrait}
-          vodId={vodId!}
-          playerRef={playerRef}
-          delay={delay}
-          userChatDelay={userChatDelay}
+    <PlayerLayout
+      isPortrait={isPortrait}
+      chatOnLeft={chatOnLeft}
+      setChatOnLeft={setChatOnLeft}
+      playerElement={
+        <BaseVod
+          {...props}
+          logo={logo}
+          handlePartChange={handlePartChange}
           youtube={youtube}
+          isYoutubeVod={true}
+          playerRef={playerRef}
           part={part}
           setPart={setPart}
-          setUserChatDelay={setUserChatDelay}
-          isYoutubeVod={true}
-          playerState={playerState}
-          platform={vod?.platform ?? ''}
-          twitchId={twitchId}
-          channel={channel}
+          vod={vod}
+          setPlayerState={setPlayerState}
+          origin={origin}
+          isPortrait={isPortrait}
         />
-      </div>
-    </div>
+      }
+      chatProps={chatProps}
+    />
   );
 }

@@ -17,6 +17,7 @@ interface YoutubePlayerProps {
   setTheatreMode: (v: boolean) => void;
   theatreMode: boolean;
   copyTimestamp: () => void;
+  tenant: string;
 }
 
 export default function YoutubePlayer(props: YoutubePlayerProps) {
@@ -32,6 +33,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
     setTheatreMode,
     theatreMode,
     copyTimestamp,
+    tenant,
   } = props;
   const timeIntervalRef = useRef<number | null>(null);
   const [showControls, setShowControls] = useState(true);
@@ -41,7 +43,9 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
   const autoHideTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches);
+    setIsTouchDevice(
+      window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    );
   }, []);
 
   useEffect(() => {
@@ -140,7 +144,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
     if (games) {
       if (nextPart > games.length) return;
       const selectedGameId = games[nextPart - 1].id;
-      const savedPosition = getResumePosition(selectedGameId, 'game_');
+      const savedPosition = getResumePosition(selectedGameId, 'game_', tenant);
       let savedTimestamp = 0;
       if (savedPosition !== null) {
         savedTimestamp = savedPosition;
@@ -241,7 +245,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
       >
         <button
           onClick={toggleTheatreMode}
-          className="text-white hover:text-gray-300 transition-colors flex items-center justify-center"
+          className="flex items-center justify-center text-[#f0f0f5] transition-colors hover:text-[var(--color-primary)]"
           style={{ height: 32, width: 32 }}
           title={theatreMode ? 'Exit Theatre Mode' : 'Theatre Mode'}
         >
@@ -250,7 +254,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
         {!games && (
           <button
             onClick={handleCopy}
-            className="text-white hover:text-gray-300 transition-colors flex items-center justify-center"
+            className="flex items-center justify-center text-[#f0f0f5] transition-colors hover:text-[var(--color-primary)]"
             style={{ height: 32, width: 32 }}
             title={copied ? 'Copied!' : 'Copy Current Timestamp'}
             aria-label="Copy Current Timestamp"

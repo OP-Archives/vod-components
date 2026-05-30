@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
+import { usePlayerLayout } from '../hooks/usePlayerLayout';
 import type { VOD, PlayerState } from '../types';
 import { convertTimestamp } from '../utils/helpers';
 import Loading from '../utils/Loading';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
 import BaseVod from './BaseVod';
-import Chat from './Chat';
+import type { ChatProps } from './Chat';
+import PlayerLayout from './PlayerLayout';
 
 export interface CustomVodProps {
   archiveApiBase: string;
@@ -14,6 +16,7 @@ export interface CustomVodProps {
   cdnBase?: string;
   type?: 'cdn' | 'manual';
   twitchId: number;
+  tenant: string;
 }
 
 export default function CustomVod(props: CustomVodProps) {
@@ -26,15 +29,8 @@ export default function CustomVod(props: CustomVodProps) {
   const [userChatDelay, setUserChatDelay] = useState(0);
   const [playerState, setPlayerState] = useState<PlayerState>(-1);
   const playerRef = useRef<HTMLVideoElement | null>(null);
-  const [isPortrait, setIsPortrait] = useState(false);
 
-  useEffect(() => {
-    const mql = window.matchMedia('(orientation: portrait)');
-    setIsPortrait(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsPortrait(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
+  const { isPortrait, chatOnLeft, setChatOnLeft } = usePlayerLayout();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -90,7 +86,7 @@ export default function CustomVod(props: CustomVodProps) {
     if (timestampValue > 0) {
       setTimestamp(timestampValue);
     } else {
-      const savedPosition = getResumePosition(vodId);
+      const savedPosition = getResumePosition(vodId, 'vod_', props.tenant);
       if (savedPosition !== null && savedPosition > 0) {
         console.info(`Resuming Playback from ${savedPosition}`);
         setTimestamp(savedPosition);
@@ -105,11 +101,11 @@ export default function CustomVod(props: CustomVodProps) {
 
     switch (playerState) {
       case 0:
-        clearResumePosition(vodId, 'vod_');
+        clearResumePosition(vodId, 'vod_', props.tenant);
         break;
       case 2:
         const pauseTime = playerRef.current.currentTime;
-        if (pauseTime !== null && pauseTime > 0) saveResumePosition(vodId, pauseTime, 'vod_');
+        if (pauseTime !== null && pauseTime > 0) saveResumePosition(vodId, pauseTime, 'vod_', props.tenant);
         break;
       default:
         break;
@@ -125,7 +121,7 @@ export default function CustomVod(props: CustomVodProps) {
       if (now - lastSaveRef.current > 10000) {
         const t = playerRef.current!.currentTime;
         if (t > 0) {
-          saveResumePosition(vodId, t, 'vod_');
+          saveResumePosition(vodId, t, 'vod_', props.tenant);
           lastSaveRef.current = now;
         }
       }
@@ -134,7 +130,7 @@ export default function CustomVod(props: CustomVodProps) {
     // Save immediately on play
     const t = playerRef.current.currentTime;
     if (t > 0) {
-      saveResumePosition(vodId, t, 'vod_');
+      saveResumePosition(vodId, t, 'vod_', props.tenant);
       lastSaveRef.current = Date.now();
     }
 
@@ -143,40 +139,43 @@ export default function CustomVod(props: CustomVodProps) {
 
   if (vod === undefined) return <Loading logo={logo} />;
 
+  const chatProps: ChatProps = {
+    isPortrait,
+    vodId: vodId!,
+    playerRef,
+    delay,
+    userChatDelay,
+    setUserChatDelay,
+    playerState,
+    platform: vod?.platform ?? '',
+    twitchId,
+    archiveApiBase,
+    channel,
+    chatOnLeft,
+    setChatOnLeft,
+  };
+
   return (
-    <div className="h-full w-full">
-      <div className={`flex ${isPortrait ? 'flex-col' : 'flex-row'} h-full w-full min-w-0 overflow-hidden`}>
-        <div className={`min-w-0 min-h-0 overflow-hidden ${isPortrait ? 'w-full flex-shrink-0' : 'h-full flex-1'}`}>
-          <BaseVod
-            {...props}
-            logo={logo}
-            playerRef={playerRef}
-            vod={vod}
-            timestamp={timestamp}
-            setTimestamp={setTimestamp}
-            setDelay={setDelay}
-            setPlayerState={setPlayerState}
-            cdnBase={cdnBase}
-            type={props.type}
-            isPortrait={isPortrait}
-          />
-        </div>
-        {isPortrait && <hr className="border-[#303032]" />}
-        <Chat
-          archiveApiBase={archiveApiBase}
-          isPortrait={isPortrait}
-          vodId={vodId!}
+    <PlayerLayout
+      isPortrait={isPortrait}
+      chatOnLeft={chatOnLeft}
+      setChatOnLeft={setChatOnLeft}
+      playerElement={
+        <BaseVod
+          {...props}
+          logo={logo}
           playerRef={playerRef}
-          delay={delay}
-          userChatDelay={userChatDelay}
-          setUserChatDelay={setUserChatDelay}
-          isYoutubeVod={false}
-          playerState={playerState}
-          platform={vod?.platform ?? ''}
-          twitchId={twitchId}
-          channel={channel}
+          vod={vod}
+          timestamp={timestamp}
+          setTimestamp={setTimestamp}
+          setDelay={setDelay}
+          setPlayerState={setPlayerState}
+          cdnBase={cdnBase}
+          type={props.type}
+          isPortrait={isPortrait}
         />
-      </div>
-    </div>
+      }
+      chatProps={chatProps}
+    />
   );
 }

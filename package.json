@@ -62,6 +62,7 @@
     "vite-plugin-dts": "^5.0.1"
   },
   "dependencies": {
+    "@twemoji/api": "^17.0.2",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
     "can-autoplay": "^3.0.2",
@@ -70,8 +71,7 @@
     "react-router-dom": "^7.15.1",
     "react-youtube": "^10.1.0",
     "simplebar-react": "^3.3.2",
-    "tinyduration": "^3.4.1",
-    "twemoji": "^14.0.2"
+    "tinyduration": "^3.4.1"
   },
   "peerDependencies": {
     "lucide-react": "^1.16.0",

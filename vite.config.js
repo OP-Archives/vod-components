@@ -32,10 +32,9 @@ export default defineConfig({
           'react-dom',
           'react/jsx-runtime',
           'lucide-react',
-          'simplebar-react',
           'react-router-dom',
           'react-youtube',
-          'twemoji',
+          '@twemoji/api',
           'hls.js',
         ];
         return externals.some((pkg) => id === pkg || id.startsWith(pkg + '/'));

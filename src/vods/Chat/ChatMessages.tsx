@@ -1,6 +1,4 @@
-import { Pause } from 'lucide-react';
-import SimpleBar from 'simplebar-react';
-import 'simplebar-react/dist/simplebar.min.css';
+import { Pause, Loader2 } from 'lucide-react';
 import type { Comment } from '../../types';
 
 interface ChatMessagesProps {
@@ -20,36 +18,34 @@ export default function ChatMessages(props: ChatMessagesProps) {
   if (commentsCount === 0) {
     if (isLoading) {
       return (
-        <div className="flex justify-center items-center h-full w-full flex-col">
-          <div className="flex flex-col justify-center items-center">
-            <div className="spinner mt-2" />
-          </div>
+        <div className="flex h-full w-full flex-col items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-white" />
         </div>
       );
     }
-
     return (
-      <div className="flex justify-center items-center h-full w-full flex-col">
-        <p className="text-gray-400 text-sm">No messages</p>
+      <div className="flex h-full w-full flex-col items-center justify-center">
+        <p className="text-sm text-[#9ca3af]">No messages</p>
       </div>
     );
   }
 
   return (
     <>
-      <SimpleBar
-        scrollableNodeProps={{ ref: chatRef, onScroll: handleScroll }}
-        style={{ height: '100%', overflowX: 'hidden' }}
+      <div
+        ref={chatRef as React.Ref<HTMLDivElement>}
+        onScroll={handleScroll}
+        className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto"
       >
-        <div className="flex justify-end flex-col p-0">
-          <div className="flex flex-wrap min-h-0">{shownMessages}</div>
-        </div>
-      </SimpleBar>
+        <div className="min-h-0 flex-1"></div>
+
+        <div className="flex shrink-0 flex-col py-2">{shownMessages}</div>
+      </div>
       {scrolling && (
         <div className="relative flex justify-center">
           <button
             onClick={scrollToBottom}
-            className="absolute bottom-1 z-10 rounded-full bg-[#18181b] text-xs text-gray-300 px-4 py-2 flex items-center gap-1.5 shadow-lg hover:bg-[#2f2f35] hover:text-white transition-all cursor-pointer"
+            className="absolute bottom-1 z-10 flex cursor-pointer items-center gap-1.5 rounded-full bg-[#18181b] px-4 py-2 text-xs text-[#9ca3af] shadow-md transition-all hover:bg-[#18181b] hover:text-[#f0f0f5]"
           >
             <Pause size={18} />
             <span>Chat Paused</span>

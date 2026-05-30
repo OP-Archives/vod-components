@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef, ChangeEvent } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
+import { usePlayerLayout } from '../hooks/usePlayerLayout';
 import type { VOD, GameEntry, PartInfo, PlayerState } from '../types';
 import Loading from '../utils/Loading';
 import { getResumePosition, saveResumePosition, clearResumePosition } from '../utils/positionStorage';
 import BaseVod from './BaseVod';
-import Chat from './Chat';
+import type { ChatProps } from './Chat';
+import PlayerLayout from './PlayerLayout';
 
 export interface GamesProps {
   archiveApiBase: string;
@@ -12,6 +14,7 @@ export interface GamesProps {
   logo: string;
   twitchId: number;
   origin?: string;
+  tenant: string;
 }
 
 export default function Games(props: GamesProps) {
@@ -24,15 +27,8 @@ export default function Games(props: GamesProps) {
   const [userChatDelay, setUserChatDelay] = useState(0);
   const [playerState, setPlayerState] = useState<PlayerState>(-1);
   const playerRef = useRef<HTMLVideoElement | null>(null);
-  const [isPortrait, setIsPortrait] = useState(false);
 
-  useEffect(() => {
-    const mql = window.matchMedia('(orientation: portrait)');
-    setIsPortrait(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsPortrait(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
+  const { isPortrait, chatOnLeft, setChatOnLeft } = usePlayerLayout();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -83,7 +79,7 @@ export default function Games(props: GamesProps) {
     let savedTimestamp = 0;
     const selectedGameIndex = index === -1 ? 0 : index;
     const selectedGameId = vod.games[selectedGameIndex].id;
-    const savedPosition = getResumePosition(selectedGameId, 'game_');
+    const savedPosition = getResumePosition(selectedGameId, 'game_', props.tenant);
     if (savedPosition !== null) {
       savedTimestamp = savedPosition;
     }
@@ -102,13 +98,13 @@ export default function Games(props: GamesProps) {
 
     switch (playerState) {
       case 0:
-        clearResumePosition(currentGame.id, 'game_');
+        clearResumePosition(currentGame.id, 'game_', props.tenant);
         break;
       case 2:
         const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
         const pauseTime = ytP?.getCurrentTime?.() ?? 0;
         if (pauseTime > 0) {
-          saveResumePosition(currentGame.id, pauseTime, 'game_');
+          saveResumePosition(currentGame.id, pauseTime, 'game_', props.tenant);
         }
         break;
       default:
@@ -129,7 +125,7 @@ export default function Games(props: GamesProps) {
         const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
         const t = ytP?.getCurrentTime?.() ?? 0;
         if (t > 0) {
-          saveResumePosition(currentGame.id, t, 'game_');
+          saveResumePosition(currentGame.id, t, 'game_', props.tenant);
           lastSaveRef.current = now;
         }
       }
@@ -139,7 +135,7 @@ export default function Games(props: GamesProps) {
     const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
     const t = ytP?.getCurrentTime?.() ?? 0;
     if (t > 0) {
-      saveResumePosition(currentGame.id, t, 'game_');
+      saveResumePosition(currentGame.id, t, 'game_', props.tenant);
       lastSaveRef.current = Date.now();
     }
 
@@ -149,7 +145,7 @@ export default function Games(props: GamesProps) {
   const handlePartChange = (evt: ChangeEvent<HTMLSelectElement>) => {
     const tmpPart = parseInt(evt.target.value) + 1;
     const selectedGameId = games![tmpPart - 1].id;
-    const savedPosition = getResumePosition(selectedGameId, 'game_');
+    const savedPosition = getResumePosition(selectedGameId, 'game_', props.tenant);
     let savedTimestamp = 0;
     if (savedPosition !== null) {
       savedTimestamp = savedPosition;
@@ -191,40 +187,43 @@ export default function Games(props: GamesProps) {
     );
   }
 
+  const chatProps: ChatProps = {
+    isPortrait,
+    vodId: vodId!,
+    playerRef,
+    userChatDelay,
+    setUserChatDelay,
+    part: part ?? null,
+    games,
+    playerState,
+    platform: vod?.platform ?? '',
+    twitchId,
+    archiveApiBase,
+    channel,
+    chatOnLeft,
+    setChatOnLeft,
+  };
+
   return (
-    <div className="h-full w-full">
-      <div className={`flex ${isPortrait ? 'flex-col' : 'flex-row'} h-full w-full min-w-0 overflow-hidden`}>
-        <div className={`min-w-0 min-h-0 overflow-hidden ${isPortrait ? 'w-full flex-shrink-0' : 'h-full flex-1'}`}>
-          <BaseVod
-            {...props}
-            logo={logo}
-            handlePartChange={handlePartChange}
-            games={games}
-            playerRef={playerRef}
-            part={part}
-            setPart={setPart}
-            vod={vod}
-            setPlayerState={setPlayerState}
-            isPortrait={isPortrait}
-          />
-        </div>
-        {isPortrait && <hr className="border-[#303032]" />}
-        <Chat
-          archiveApiBase={archiveApiBase}
-          isPortrait={isPortrait}
-          vodId={vodId!}
-          playerRef={playerRef}
-          userChatDelay={userChatDelay}
-          part={part ?? null}
-          setPart={setPart}
+    <PlayerLayout
+      isPortrait={isPortrait}
+      chatOnLeft={chatOnLeft}
+      setChatOnLeft={setChatOnLeft}
+      playerElement={
+        <BaseVod
+          {...props}
+          logo={logo}
+          handlePartChange={handlePartChange}
           games={games}
-          setUserChatDelay={setUserChatDelay}
-          playerState={playerState}
-          platform={vod?.platform ?? ''}
-          twitchId={twitchId}
-          channel={channel}
+          playerRef={playerRef}
+          part={part}
+          setPart={setPart}
+          vod={vod}
+          setPlayerState={setPlayerState}
+          isPortrait={isPortrait}
         />
-      </div>
-    </div>
+      }
+      chatProps={chatProps}
+    />
   );
 }

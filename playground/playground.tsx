@@ -20,6 +20,7 @@ function PlaygroundContent() {
   const [channel, setChannel] = useState('xqc');
   const [logo, setLogo] = useState('https://xqc.wtf/assets/logo-D84ej4L_.png');
   const [twitchId, setTwitchId] = useState('71092938');
+  const [tenant, setTenant] = useState('xqc');
   const [showSidebar, setShowSidebar] = useState(() => window.innerWidth >= 768);
 
   useEffect(() => {
@@ -60,23 +61,28 @@ function PlaygroundContent() {
     }
   };
 
-  const propsRef = useRef({
-    shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId) },
+  const propsRef = useRef<{
+    shared: { archiveApiBase: string; channel: string; logo: string; twitchId: number; tenant: string };
+    youtube: { type: 'live' | 'vod' | ''; defaultDelay: number; origin: string };
+    custom: { cdnBase: string; customType: 'cdn' | 'manual' };
+    games: { origin: string };
+  }>({
+    shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId), tenant },
     youtube: { type: youtubeType, defaultDelay: youtubeDefaultDelay, origin: youtubeOrigin },
     custom: { cdnBase: customCdnBase, customType },
-    games: {},
+    games: { origin: youtubeOrigin },
   });
 
   const [youtubeKey, setYoutubeKey] = useState(0);
   const [customKey, setCustomKey] = useState(0);
   const [gamesKey, setGamesKey] = useState(0);
 
-  const applyProps = () => {
+ const applyProps = () => {
     propsRef.current = {
-      shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId) },
+      shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId), tenant },
       youtube: { type: youtubeType, defaultDelay: youtubeDefaultDelay, origin: youtubeOrigin },
       custom: { cdnBase: customCdnBase, customType },
-   games: { origin: youtubeOrigin },
+      games: { origin: youtubeOrigin },
     };
     setYoutubeKey((k) => k + 1);
     setCustomKey((k) => k + 1);
@@ -189,6 +195,12 @@ function PlaygroundContent() {
               type="number"
               value={twitchId}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setTwitchId(e.target.value)}
+            />
+            <label className={labelClasses}>Tenant</label>
+            <input
+              className={inputClasses}
+              value={tenant}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setTenant(e.target.value)}
             />
 
             {tab === 0 && (

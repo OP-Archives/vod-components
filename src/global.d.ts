@@ -19,12 +19,7 @@ declare module 'humanize-duration' {
   export default humanize;
 }
 
-declare module 'simplebar-react/dist/simplebar.min.css' {
-  const content: string;
-  export default content;
-}
-
-declare module 'twemoji' {
+declare module '@twemoji/api' {
   interface Options {
     folder?: string;
     ext?: string;
@@ -33,7 +28,7 @@ declare module 'twemoji' {
   }
   export function parse(element: HTMLElement, options?: Options): void;
   export function test(text: string): boolean;
-  const twemoji: { parse: typeof parse; test: typeof test };
+  const twemoji: { parse: typeof parse; test: typeof test; base: string; ext: string };
   export default twemoji;
 }
 
@@ -45,6 +40,10 @@ interface Document {
 
 interface HTMLElement {
   webkitRequestFullscreen?(): void;
+}
+
+interface HTMLVideoElement {
+  webkitEnterFullscreen?(): void;
 }
 
 declare module 'tinyduration' {

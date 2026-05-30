@@ -1,7 +1,6 @@
 import humanize from 'humanize-duration';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import SimpleBar from 'simplebar-react';
 import type { Chapter, VODUpload, PartInfo } from '../types';
 import { toSeconds, getImage } from '../utils/helpers';
 
@@ -27,7 +26,12 @@ function VodChapters({
   const [menuOpen, setMenuOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; maxHeight: number }>({
+  const [coords, setCoords] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+    maxHeight: number;
+  }>({
     left: 0,
     maxHeight: 400,
   });
@@ -80,8 +84,14 @@ function VodChapters({
 
     if (menuOpen) {
       document.addEventListener('mousedown', handleOutsideInteraction);
-      document.addEventListener('wheel', handleOutsideInteraction, { capture: true, passive: true });
-      document.addEventListener('touchmove', handleOutsideInteraction, { capture: true, passive: true });
+      document.addEventListener('wheel', handleOutsideInteraction, {
+        capture: true,
+        passive: true,
+      });
+      document.addEventListener('touchmove', handleOutsideInteraction, {
+        capture: true,
+        passive: true,
+      });
       document.addEventListener('keydown', handleOutsideInteraction);
       window.addEventListener('resize', handleClose);
     }
@@ -99,7 +109,7 @@ function VodChapters({
       let part = 1;
       let timestamp = data?.start;
       if (timestamp! > 1) {
-        for (let data of youtube) {
+        for (const data of youtube) {
           if ((data.duration ?? 0) > timestamp!) {
             part = data?.part || 1;
             break;
@@ -116,7 +126,7 @@ function VodChapters({
   };
 
   return (
-    <div className="pr-2 relative">
+    <div className="relative pr-2">
       <button
         ref={buttonRef}
         onClick={handleClick}
@@ -138,25 +148,26 @@ function VodChapters({
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-[1300] bg-[#18181b] border border-[#303032] rounded-xl shadow-2xl overflow-hidden animate-[fadeIn_0.2s_ease-out]"
+            className="fixed z-[1300] animate-[fadeIn_0.2s_ease-out] overflow-hidden rounded-xl border border-[#222230] bg-[#16161e] shadow-2xl"
             style={{
               top: coords.top !== undefined ? coords.top : 'auto',
               bottom: coords.bottom !== undefined ? coords.bottom : 'auto',
               left: coords.left,
               width: 'max-content',
               minWidth: '200px',
-              maxWidth: 'calc(100vw - 32px)',
+              maxWidth: '200px',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <SimpleBar style={{ maxHeight: `${Math.min(400, coords.maxHeight)}px` }}>
+            <div style={{ maxHeight: `${Math.min(400, coords.maxHeight)}px`, overflowY: 'auto' }}>
               <div className="flex flex-col">
                 {chapters.map((data) => (
                   <button
+                    disabled={data.start === chapter!.start}
                     onClick={() => handleChapterClick(data)}
                     key={`${data.name}-${data.start}`}
-                    className={`w-full text-left flex items-start gap-2 px-2 py-1.5 sm:px-3 sm:py-2 transition-colors ${
-                      data.start === chapter!.start ? 'bg-[#2f2f35]' : 'hover:bg-[#2f2f35]'
+                    className={`flex w-full cursor-default items-start gap-2 px-2 py-1.5 text-left transition-colors sm:px-3 sm:py-2 ${
+                      data.start === chapter!.start ? 'bg-[#1e1e2a]' : 'hover:bg-[#222230]'
                     }`}
                   >
                     <div className="flex-shrink-0">
@@ -167,21 +178,21 @@ function VodChapters({
                         height={53}
                         decoding="async"
                         loading="lazy"
-                        className="w-[30px] h-[40px] sm:w-[40px] sm:h-[53px]"
+                        className="h-[40px] w-[30px] sm:h-[53px] sm:w-[40px]"
                       />
                     </div>
-                    <div className="flex flex-col min-w-0 w-full">
-                      <span className="text-xs sm:text-sm text-[#efeff1] whitespace-normal break-words leading-snug">
+                    <div className="flex w-full min-w-0 flex-col">
+                      <span className="text-xs leading-snug break-words whitespace-normal text-[#f0f0f5] sm:text-sm">
                         {data.name}
                       </span>
                       {data.end !== undefined && (
-                        <span className="text-xs text-[#adadb8] mt-0.5">{`${humanize(data.duration * 1000, { largest: 2 })}`}</span>
+                        <span className="mt-0.5 text-xs text-[#9ca3af]">{`${humanize(data.duration * 1000, { largest: 2 })}`}</span>
                       )}
                     </div>
                   </button>
                 ))}
               </div>
-            </SimpleBar>
+            </div>
           </div>,
           document.body
         )}

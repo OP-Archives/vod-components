@@ -1,0 +1,3 @@
+export const PROGRESS_TOOLTIP_HALF_WIDTH = 30;
+export const VOLUME_TOOLTIP_HALF_WIDTH = 20;
+export const THUMB_WIDTH = 16;
