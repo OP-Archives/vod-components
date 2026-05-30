@@ -64,6 +64,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
   const [customFont, setCustomFont] = useState('');
   const [showCustomFont, setShowCustomFont] = useState(false);
   const [delayInput, setDelayInput] = useState('0');
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   useEffect(() => {
     if (showModal) {
@@ -237,7 +238,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
         {/* Fixed Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[#222230] bg-[#16161e] px-4 py-3 sm:px-6 sm:py-4">
           <button
-            onClick={handleResetAll}
+            onClick={() => setShowConfirmReset(true)}
             className="text-[#9ca3af] hover:text-[#f0f0f5]"
             title="Reset all settings to defaults"
           >
@@ -519,6 +520,41 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
           </div>
         </div>
       </div>
+
+      {showConfirmReset && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowConfirmReset(false);
+          }}
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+        >
+          <div onClick={(e) => e.stopPropagation()} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full max-w-[340px] rounded-xl border border-[#222230] bg-[#16161e] p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="mb-5 text-sm text-[#9ca3af]">Are you sure you want to reset all settings to defaults?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowConfirmReset(false)}
+                className="rounded-lg border border-[#222230] bg-[#222230] px-4 py-2 text-sm text-[#9ca3af] transition-colors hover:text-[#f0f0f5]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleResetAll();
+                  setShowConfirmReset(false);
+                }}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition-colors hover:bg-red-500"
+              >
+                Reset All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
