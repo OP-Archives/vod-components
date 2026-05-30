@@ -263,7 +263,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                     <select
                       value={fontFamily}
                       onChange={(e) => handleFontChange(e.target.value)}
-                      className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-white focus:outline-none"
+                      className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#222230] focus:outline-none"
                     >
                       {FONT_OPTIONS.map((font) => (
                         <option key={font.value} value={font.value}>
@@ -300,7 +300,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                         e.key === 'Enter' && handleCustomFontSubmit()
                       }
                       placeholder="e.g. 'Fira Code', monospace"
-                      className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-white focus:outline-none"
+                      className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#222230] focus:outline-none"
                       autoFocus
                     />
                     <button
@@ -415,7 +415,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                   value={delayInput}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => handleDelayChange(e.target.value)}
                   onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                  className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-white focus:outline-none"
+                  className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#222230] focus:outline-none"
                 />
                 <span className="text-sm font-medium whitespace-nowrap text-[#9ca3af]">secs</span>
               </div>
@@ -427,7 +427,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                 <input
                   id="filter-word-input"
                   type="text"
-                  className="flex-1 rounded-l-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-white focus:outline-none"
+                  className="flex-1 rounded-l-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#222230] focus:outline-none"
                   placeholder="Add word to filter"
                   onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleAddWord()}
                 />
