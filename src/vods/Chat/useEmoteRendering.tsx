@@ -1,75 +1,110 @@
-import { memo, useCallback } from 'react';
-import type { Comment, EmoteEntry, EmoteProvider, Badge, BadgeVersion } from '../types';
-import { toHHMMSS } from '../utils/helpers';
-import MessageTooltip from '../vods/Chat/MessageTooltip';
-import { Twemoji, emojiTest, extractEmojis } from '../vods/Chat/Twemoji';
-import { adjustUsernameColor } from '../vods/Chat/UsernameColor';
+import { useMemo, useCallback } from 'react';
+import type {
+  EmoteEntry,
+  EmoteProvider,
+  FfzEmote,
+  BttvEmote,
+  SevenTVEmote,
+  Badge,
+  BadgeVersion,
+  Comment,
+} from '../../types';
+import MessageTooltip from './MessageTooltip';
+import { Twemoji, emojiTest, extractEmojis } from './Twemoji';
+
+const BASE_TWITCH_CDN = 'https://static-cdn.jtvnw.net';
+const BASE_FFZ_EMOTE_CDN = 'https://cdn.frankerfacez.com/emote';
+const BASE_BTTV_EMOTE_CDN = 'https://cdn.betterttv.net/emote';
+const BASE_7TV_EMOTE_CDN = 'https://cdn.7tv.app/emote';
+const BASE_KICK_EMOTE_CDN = 'https://files.kick.com/emotes';
 
 const URL_REGEX = /^(https?:\/\/)?[\w.-]+\.[\w\/.-]+$/i;
 
-interface MemoizedCommentProps {
-  comment: Comment;
-  showTimestamp: boolean;
-  transformBadges: (_badges: Comment['user_badges'], _keyPrefix: string) => React.ReactElement;
-  transformMessage: (_fragments: Comment['message'], _keyPrefix: string) => React.ReactNode | null;
-  fontFamily: string;
-  messageFontSize: number;
-}
-
-export const MemoizedComment = memo(function MemoizedComment({
-  comment,
-  showTimestamp,
-  transformBadges,
-  transformMessage,
-  fontFamily,
-  messageFontSize,
-}: MemoizedCommentProps) {
-  return (
-    <div
-      className="chat-message-highlight flex w-full shrink-0 items-baseline px-2 py-1 transition-colors hover:bg-white/5"
-      style={{ '--highlight-color': adjustUsernameColor(comment.user_color) } as React.CSSProperties}
-    >
-      {showTimestamp && (
-        <div
-          className="mr-2 min-w-0 shrink-0 align-middle text-[#adadb8]"
-          style={{ fontSize: 'var(--chat-font-size-timestamp)' }}
-        >
-          {toHHMMSS(comment.content_offset_seconds)}
-        </div>
-      )}
-      <div
-        className="min-w-0 flex-1 leading-6 break-words text-[#f0f0f5]"
-        style={{ fontFamily, fontSize: `${messageFontSize}px` }}
-      >
-        {comment.user_badges && transformBadges(comment.user_badges, `comment-${comment.id}`)}
-        <span className="font-bold" style={{ color: adjustUsernameColor(comment.user_color) }}>
-          {comment.display_name}
-        </span>
-        <span>: </span>
-        <span>{transformMessage(comment.message, `comment-${comment.id}`)}</span>
-      </div>
-    </div>
-  );
-});
-
-interface ChatMessageRendererProps {
-  emoteLookup: Map<string, EmoteEntry>;
-  getEmoteImageUrl: (emote: EmoteEntry, type: EmoteProvider, size?: number) => string;
-  getEmoteImageSrcSet: (emote: EmoteEntry, type: EmoteProvider) => string;
-  seventvIsZeroWidth: (emote: EmoteEntry) => boolean;
+interface UseEmoteRenderingOptions {
+  emotes: {
+    ffz_emotes?: FfzEmote[];
+    bttv_emotes?: BttvEmote[];
+    seventv_emotes?: SevenTVEmote[];
+  };
   badgesRef: React.RefObject<Record<'channel' | 'global', Badge[]> | undefined>;
+  platform: string;
 }
 
-export function useChatMessageRenderer({
-  emoteLookup,
-  getEmoteImageUrl,
-  getEmoteImageSrcSet,
-  seventvIsZeroWidth,
-  badgesRef,
-}: ChatMessageRendererProps) {
+interface UseEmoteRenderingReturn {
+  transformMessage: (fragments: Comment['message'], keyPrefix: string) => React.ReactNode | null;
+  transformBadges: (textBadges: Comment['user_badges'], keyPrefix: string) => React.ReactElement;
+  renderEmoteTooltip: (emote: EmoteEntry, word: string, key: string) => React.ReactElement;
+}
+
+export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRenderingOptions): UseEmoteRenderingReturn {
+  const emoteLookup = useMemo(() => {
+    const lookup = new Map<string, EmoteEntry>();
+    const ffz = emotes?.ffz_emotes || [];
+    const bttv = emotes?.bttv_emotes || [];
+    const seventv = emotes?.seventv_emotes || [];
+
+    ffz.forEach((emote: FfzEmote) => {
+      const code = emote.code || emote.text;
+      const name = emote.name || code;
+      lookup.set(code || name, { ...emote, code, name, provider: 'FFZ' as EmoteProvider });
+    });
+    bttv.forEach((emote: BttvEmote) =>
+      lookup.set(emote.code, { ...emote, name: emote.code, provider: 'BTTV' as EmoteProvider })
+    );
+    seventv.forEach((emote: SevenTVEmote) => {
+      const code = emote.code || '';
+      const name = emote.name || code;
+      lookup.set(name, { ...emote, code, name, provider: '7TV' as EmoteProvider });
+    });
+
+    return lookup;
+  }, [emotes]);
+
+  const getEmoteImageUrl = useCallback((emote: EmoteEntry, type: EmoteProvider, size: number = 1): string => {
+    switch (type) {
+      case 'FFZ':
+        return `${BASE_FFZ_EMOTE_CDN}/${emote.id}/${size}`;
+      case 'BTTV':
+        return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/${size === 4 ? 2 : size}x`;
+      case '7TV':
+        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/${size}x.webp`;
+      case 'Kick':
+        return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize`;
+      default:
+        return `${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/${size}.0`;
+    }
+  }, []);
+
+  const getEmoteImageSrcSet = useCallback((emote: EmoteEntry, type: EmoteProvider): string => {
+    switch (type) {
+      case 'FFZ':
+        return `${BASE_FFZ_EMOTE_CDN}/${emote.id}/1 1x, ${BASE_FFZ_EMOTE_CDN}/${emote.id}/2 2x, ${BASE_FFZ_EMOTE_CDN}/${emote.id}/4 4x`;
+      case 'BTTV':
+        return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/1x 1x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/2x 2x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/3x 3x`;
+      case '7TV':
+        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/1x.webp 1x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/2x.webp 2x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/3x.webp 3x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/4x.webp 4x`;
+      case 'Kick':
+        return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize 1x`;
+      default:
+        return `${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/1.0 1x, ${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/2.0 2x, ${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/3.0 4x`;
+    }
+  }, []);
+
+  const SEVENTV_isZeroWidth = useCallback((emote: EmoteEntry): boolean => {
+    const ZERO_WIDTH = 1 << 8;
+    return (emote.flags && ZERO_WIDTH) !== 0;
+  }, []);
+
+  const getEmoteImageClassName = useCallback((type: EmoteProvider): string => {
+    return type === 'Kick'
+      ? 'h-auto min-h-[28px] max-h-[32px] w-auto max-w-full border-none'
+      : 'h-auto min-h-[28px] w-auto max-w-full border-none';
+  }, []);
+
   const renderEmoteTooltip = useCallback(
     (emote: EmoteEntry, word: string, key: string) => {
       const emoteType = emote.provider;
+
       return (
         <MessageTooltip
           key={key}
@@ -87,7 +122,7 @@ export function useChatMessageRenderer({
         >
           <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
             <img
-              className="h-auto min-h-[28px] w-auto max-w-full border-none"
+              className={getEmoteImageClassName(emoteType)}
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(emote, emoteType)}
               srcSet={getEmoteImageSrcSet(emote, emoteType)}
@@ -97,13 +132,14 @@ export function useChatMessageRenderer({
         </MessageTooltip>
       );
     },
-    [getEmoteImageUrl, getEmoteImageSrcSet]
+    [getEmoteImageUrl, getEmoteImageSrcSet, getEmoteImageClassName]
   );
 
   const renderCombinedEmoteTooltip = useCallback(
     (normalEmote: EmoteEntry, zwEmote: EmoteEntry, key: string) => {
       const normalType = normalEmote.provider;
       const zwType = zwEmote.provider;
+
       return (
         <MessageTooltip
           key={key}
@@ -133,14 +169,14 @@ export function useChatMessageRenderer({
         >
           <span style={{ display: 'inline-block', position: 'relative', verticalAlign: 'middle' }}>
             <img
-              className="h-auto min-h-[28px] w-auto max-w-full border-none"
+              className={getEmoteImageClassName(normalType)}
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(normalEmote, normalType)}
               srcSet={getEmoteImageSrcSet(normalEmote, normalType)}
               alt={normalEmote.code}
             />
             <img
-              className="pointer-events-none absolute top-1/2 left-1/2 h-auto w-auto max-w-full -translate-x-1/2 -translate-y-1/2 border-none align-middle"
+              className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${getEmoteImageClassName(zwType)} border-none align-middle`}
               style={{ verticalAlign: 'middle' }}
               src={getEmoteImageUrl(zwEmote, zwType)}
               srcSet={getEmoteImageSrcSet(zwEmote, zwType)}
@@ -150,7 +186,7 @@ export function useChatMessageRenderer({
         </MessageTooltip>
       );
     },
-    [getEmoteImageUrl, getEmoteImageSrcSet]
+    [getEmoteImageUrl, getEmoteImageSrcSet, getEmoteImageClassName]
   );
 
   const transformMessage = useCallback(
@@ -165,7 +201,11 @@ export function useChatMessageRenderer({
           const emoteID = fragment.emote ? fragment.emote.emoteID : fragment.emoticon!.emoticon_id;
           textFragments.push(
             renderEmoteTooltip(
-              { id: emoteID, code: fragment.text, provider: 'Twitch' as EmoteProvider },
+              {
+                id: emoteID,
+                code: fragment.text,
+                provider: (platform.charAt(0).toUpperCase() + platform.slice(1)) as EmoteProvider,
+              },
               fragment.text,
               `${keyPrefix}-frag-${fIndex}-emote-${fragment.text}`
             ),
@@ -180,7 +220,7 @@ export function useChatMessageRenderer({
             const emote = emoteLookup.get(word);
             if (emote) {
               if (emote.provider === '7TV') {
-                const isZeroWidth = seventvIsZeroWidth(emote);
+                const isZeroWidth = SEVENTV_isZeroWidth(emote);
 
                 if (isZeroWidth && lastNormalEmoteData) {
                   const storedEmote = lastNormalEmoteData as EmoteEntry;
@@ -290,9 +330,10 @@ export function useChatMessageRenderer({
       emoteLookup,
       renderEmoteTooltip,
       renderCombinedEmoteTooltip,
-      seventvIsZeroWidth,
+      SEVENTV_isZeroWidth,
       getEmoteImageUrl,
       getEmoteImageSrcSet,
+      platform,
     ]
   );
 
@@ -347,5 +388,6 @@ export function useChatMessageRenderer({
   return {
     transformMessage,
     transformBadges,
+    renderEmoteTooltip,
   };
 }

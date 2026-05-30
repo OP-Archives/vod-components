@@ -2,7 +2,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useChatEngine } from '../hooks/useChatEngine';
-import { useChatMessageRenderer } from '../hooks/useChatMessageRenderer';
 import { useChatSettings } from '../hooks/useChatSettings';
 import type {
   Comment,
@@ -15,24 +14,18 @@ import type {
   VODUpload,
   GameEntry,
   Badge,
-  EmoteEntry,
-  EmoteProvider,
 } from '../types';
 import { toHHMMSS } from '../utils/helpers';
 import { hasGetCurrentTime, isNativeVideo } from '../utils/typeGuards';
 import ChatHeader from './Chat/ChatHeader';
 import ChatMessages from './Chat/ChatMessages';
 import ChatSettingsModal from './Chat/ChatSettingsModal';
+import { useEmoteRendering } from './Chat/useEmoteRendering';
 import { adjustUsernameColor } from './Chat/UsernameColor';
 
 const BASE_BTTV_EMOTE_API = 'https://api.betterttv.net/3';
 const BASE_7TV_EMOTE_API = 'https://7tv.io/v3';
 const BASE_FFZ_EMOTE_API = 'https://api.frankerfacez.com/v1';
-const BASE_TWITCH_CDN = 'https://static-cdn.jtvnw.net';
-const BASE_FFZ_EMOTE_CDN = 'https://cdn.frankerfacez.com/emote';
-const BASE_BTTV_EMOTE_CDN = 'https://cdn.betterttv.net/emote';
-const BASE_7TV_EMOTE_CDN = 'https://cdn.7tv.app/emote';
-const BASE_KICK_EMOTE_CDN = 'https://files.kick.com/emotes';
 
 interface MemoizedCommentProps {
   comment: Comment;
@@ -98,63 +91,6 @@ export interface ChatProps {
   channel: string;
   chatOnLeft: boolean;
   setChatOnLeft: (_v: boolean) => void;
-}
-
-function buildEmoteLookup(emotes: Omit<EmotesResponse, 'vodId'>): Map<string, EmoteEntry> {
-  const lookup = new Map<string, EmoteEntry>();
-  const ffz = emotes?.ffz_emotes || [];
-  const bttv = emotes?.bttv_emotes || [];
-  const seventv = emotes?.seventv_emotes || [];
-
-  ffz.forEach((emote: FfzEmote) => {
-    const code = emote.code || emote.text;
-    const name = emote.name || code;
-    lookup.set(code || name, { ...emote, code, name, provider: 'FFZ' as EmoteProvider });
-  });
-  bttv.forEach((emote: BttvEmote) =>
-    lookup.set(emote.code, { ...emote, name: emote.code, provider: 'BTTV' as EmoteProvider })
-  );
-  seventv.forEach((emote: SevenTVEmote) => {
-    const code = emote.code || '';
-    const name = emote.name || code;
-    lookup.set(name, { ...emote, code, name, provider: '7TV' as EmoteProvider });
-  });
-  return lookup;
-}
-
-function getEmoteImageUrl(emote: EmoteEntry, type: EmoteProvider, size: number = 1): string {
-  switch (type) {
-    case 'FFZ':
-      return `${BASE_FFZ_EMOTE_CDN}/${emote.id}/${size}`;
-    case 'BTTV':
-      return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/${size === 4 ? 2 : size}x`;
-    case '7TV':
-      return `${BASE_7TV_EMOTE_CDN}/${emote.id}/${size}x.webp`;
-    case 'Kick':
-      return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize`;
-    default:
-      return `${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/${size}.0`;
-  }
-}
-
-function getEmoteImageSrcSet(emote: EmoteEntry, type: EmoteProvider): string {
-  switch (type) {
-    case 'FFZ':
-      return `${BASE_FFZ_EMOTE_CDN}/${emote.id}/1 1x, ${BASE_FFZ_EMOTE_CDN}/${emote.id}/2 2x, ${BASE_FFZ_EMOTE_CDN}/${emote.id}/4 4x`;
-    case 'BTTV':
-      return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/1x 1x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/2x 2x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/3x 3x`;
-    case '7TV':
-      return `${BASE_7TV_EMOTE_CDN}/${emote.id}/1x.webp 1x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/2x.webp 2x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/3x.webp 3x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/4x.webp 4x`;
-    case 'Kick':
-      return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize 1x`;
-    default:
-      return `${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/1.0 1x, ${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/2.0 2x, ${BASE_TWITCH_CDN}/emoticons/v2/${emote.id}/default/dark/3.0 4x`;
-  }
-}
-
-function seventvIsZeroWidth(emote: EmoteEntry): boolean {
-  const ZERO_WIDTH = 1 << 8;
-  return (emote.flags && ZERO_WIDTH) !== 0;
 }
 
 export default function Chat(props: ChatProps) {
@@ -270,15 +206,7 @@ export default function Chat(props: ChatProps) {
     playerState,
   });
 
-  const emoteLookup = useMemo(() => buildEmoteLookup(emotes), [emotes]);
-
-  const { transformMessage, transformBadges } = useChatMessageRenderer({
-    emoteLookup,
-    getEmoteImageUrl,
-    getEmoteImageSrcSet,
-    seventvIsZeroWidth,
-    badgesRef,
-  });
+  const { transformMessage, transformBadges } = useEmoteRendering({ emotes, badgesRef, platform });
 
   const commentElements = useMemo(() => {
     return messages.map((comment) => (
