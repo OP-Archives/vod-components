@@ -17,7 +17,7 @@ interface YoutubePlayerProps {
   setTheatreMode: (v: boolean) => void;
   theatreMode: boolean;
   copyTimestamp: () => void;
-  tenant: string;
+  channel: string;
 }
 
 export default function YoutubePlayer(props: YoutubePlayerProps) {
@@ -33,7 +33,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
     setTheatreMode,
     theatreMode,
     copyTimestamp,
-    tenant,
+    channel,
   } = props;
   const timeIntervalRef = useRef<number | null>(null);
   const [showControls, setShowControls] = useState(true);
@@ -144,7 +144,7 @@ export default function YoutubePlayer(props: YoutubePlayerProps) {
     if (games) {
       if (nextPart > games.length) return;
       const selectedGameId = games[nextPart - 1].id;
-      const savedPosition = getResumePosition(selectedGameId, 'game_', tenant);
+      const savedPosition = getResumePosition(selectedGameId, 'game_', channel);
       let savedTimestamp = 0;
       if (savedPosition !== null) {
         savedTimestamp = savedPosition;

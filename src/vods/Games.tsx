@@ -14,7 +14,6 @@ export interface GamesProps {
   logo: string;
   twitchId: number;
   origin?: string;
-  tenant: string;
 }
 
 export default function Games(props: GamesProps) {
@@ -79,7 +78,7 @@ export default function Games(props: GamesProps) {
     let savedTimestamp = 0;
     const selectedGameIndex = index === -1 ? 0 : index;
     const selectedGameId = vod.games[selectedGameIndex].id;
-    const savedPosition = getResumePosition(selectedGameId, 'game_', props.tenant);
+    const savedPosition = getResumePosition(selectedGameId, 'game_', props.channel);
     if (savedPosition !== null) {
       savedTimestamp = savedPosition;
     }
@@ -98,13 +97,13 @@ export default function Games(props: GamesProps) {
 
     switch (playerState) {
       case 0:
-        clearResumePosition(currentGame.id, 'game_', props.tenant);
+        clearResumePosition(currentGame.id, 'game_', props.channel);
         break;
       case 2:
         const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
         const pauseTime = ytP?.getCurrentTime?.() ?? 0;
         if (pauseTime > 0) {
-          saveResumePosition(currentGame.id, pauseTime, 'game_', props.tenant);
+          saveResumePosition(currentGame.id, pauseTime, 'game_', props.channel);
         }
         break;
       default:
@@ -125,7 +124,7 @@ export default function Games(props: GamesProps) {
         const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
         const t = ytP?.getCurrentTime?.() ?? 0;
         if (t > 0) {
-          saveResumePosition(currentGame.id, t, 'game_', props.tenant);
+          saveResumePosition(currentGame.id, t, 'game_', props.channel);
           lastSaveRef.current = now;
         }
       }
@@ -135,7 +134,7 @@ export default function Games(props: GamesProps) {
     const ytP = playerRef.current as { getCurrentTime?(): number } | null | undefined;
     const t = ytP?.getCurrentTime?.() ?? 0;
     if (t > 0) {
-      saveResumePosition(currentGame.id, t, 'game_', props.tenant);
+      saveResumePosition(currentGame.id, t, 'game_', props.channel);
       lastSaveRef.current = Date.now();
     }
 
@@ -145,7 +144,7 @@ export default function Games(props: GamesProps) {
   const handlePartChange = (evt: ChangeEvent<HTMLSelectElement>) => {
     const tmpPart = parseInt(evt.target.value) + 1;
     const selectedGameId = games![tmpPart - 1].id;
-    const savedPosition = getResumePosition(selectedGameId, 'game_', props.tenant);
+    const savedPosition = getResumePosition(selectedGameId, 'game_', props.channel);
     let savedTimestamp = 0;
     if (savedPosition !== null) {
       savedTimestamp = savedPosition;

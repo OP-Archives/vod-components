@@ -16,7 +16,6 @@ export interface CustomVodProps {
   cdnBase?: string;
   type?: 'cdn' | 'manual';
   twitchId: number;
-  tenant: string;
 }
 
 export default function CustomVod(props: CustomVodProps) {
@@ -86,7 +85,7 @@ export default function CustomVod(props: CustomVodProps) {
     if (timestampValue > 0) {
       setTimestamp(timestampValue);
     } else {
-      const savedPosition = getResumePosition(vodId, 'vod_', props.tenant);
+      const savedPosition = getResumePosition(vodId, 'vod_', props.channel);
       if (savedPosition !== null && savedPosition > 0) {
         console.info(`Resuming Playback from ${savedPosition}`);
         setTimestamp(savedPosition);
@@ -101,11 +100,11 @@ export default function CustomVod(props: CustomVodProps) {
 
     switch (playerState) {
       case 0:
-        clearResumePosition(vodId, 'vod_', props.tenant);
+        clearResumePosition(vodId, 'vod_', props.channel);
         break;
       case 2:
         const pauseTime = playerRef.current.currentTime;
-        if (pauseTime !== null && pauseTime > 0) saveResumePosition(vodId, pauseTime, 'vod_', props.tenant);
+        if (pauseTime !== null && pauseTime > 0) saveResumePosition(vodId, pauseTime, 'vod_', props.channel);
         break;
       default:
         break;
@@ -121,7 +120,7 @@ export default function CustomVod(props: CustomVodProps) {
       if (now - lastSaveRef.current > 10000) {
         const t = playerRef.current!.currentTime;
         if (t > 0) {
-          saveResumePosition(vodId, t, 'vod_', props.tenant);
+          saveResumePosition(vodId, t, 'vod_', props.channel);
           lastSaveRef.current = now;
         }
       }
@@ -130,7 +129,7 @@ export default function CustomVod(props: CustomVodProps) {
     // Save immediately on play
     const t = playerRef.current.currentTime;
     if (t > 0) {
-      saveResumePosition(vodId, t, 'vod_', props.tenant);
+      saveResumePosition(vodId, t, 'vod_', props.channel);
       lastSaveRef.current = Date.now();
     }
 

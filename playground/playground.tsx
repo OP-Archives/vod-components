@@ -20,7 +20,6 @@ function PlaygroundContent() {
   const [channel, setChannel] = useState('xqc');
   const [logo, setLogo] = useState('https://xqc.wtf/assets/logo-D84ej4L_.png');
   const [twitchId, setTwitchId] = useState('71092938');
-  const [tenant, setTenant] = useState('xqc');
   const [showSidebar, setShowSidebar] = useState(() => window.innerWidth >= 768);
 
   useEffect(() => {
@@ -62,12 +61,12 @@ function PlaygroundContent() {
   };
 
   const propsRef = useRef<{
-    shared: { archiveApiBase: string; channel: string; logo: string; twitchId: number; tenant: string };
+    shared: { archiveApiBase: string; channel: string; logo: string; twitchId: number };
     youtube: { type: 'live' | 'vod' | ''; defaultDelay: number; origin: string };
     custom: { cdnBase: string; customType: 'cdn' | 'manual' };
     games: { origin: string };
   }>({
-    shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId), tenant },
+    shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId) },
     youtube: { type: youtubeType, defaultDelay: youtubeDefaultDelay, origin: youtubeOrigin },
     custom: { cdnBase: customCdnBase, customType },
     games: { origin: youtubeOrigin },
@@ -79,7 +78,7 @@ function PlaygroundContent() {
 
  const applyProps = () => {
     propsRef.current = {
-      shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId), tenant },
+  shared: { archiveApiBase, channel, logo, twitchId: parseInt(twitchId) },
       youtube: { type: youtubeType, defaultDelay: youtubeDefaultDelay, origin: youtubeOrigin },
       custom: { cdnBase: customCdnBase, customType },
       games: { origin: youtubeOrigin },
@@ -196,14 +195,7 @@ function PlaygroundContent() {
               value={twitchId}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setTwitchId(e.target.value)}
             />
-            <label className={labelClasses}>Tenant</label>
-            <input
-              className={inputClasses}
-              value={tenant}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setTenant(e.target.value)}
-            />
-
-            {tab === 0 && (
+                        {tab === 0 && (
               <>
                 <h3 className="text-sm font-medium text-[#adadb8] mt-6 mb-1">YouTube VOD Props</h3>
                 <label className={labelClasses}>Type</label>

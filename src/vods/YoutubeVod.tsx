@@ -18,7 +18,6 @@ export interface YoutubeVodProps {
   logo: string;
   twitchId: number;
   origin?: string;
-  tenant: string;
 }
 
 export default function YoutubeVod(props: YoutubeVodProps) {
@@ -84,7 +83,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
     const partQuery = search.get('part');
     let tmpPart = partQuery !== null ? parseInt(partQuery) : 1;
     if (timestamp === 0) {
-      const savedPosition = getResumePosition(vodId, 'vod_', props.tenant);
+      const savedPosition = getResumePosition(vodId, 'vod_', props.channel);
       if (savedPosition !== null && savedPosition > 0) {
         console.info(`Resuming Playback from ${savedPosition}`);
         timestamp = savedPosition;
@@ -124,7 +123,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
     switch (playerState) {
       case 0:
         if (part.part === youtube.length) {
-          clearResumePosition(vodId, 'vod_', props.tenant);
+          clearResumePosition(vodId, 'vod_', props.channel);
         }
         break;
       case 2:
@@ -137,7 +136,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
               pauseTime += video.duration ?? 0;
             }
           }
-          saveResumePosition(vodId, pauseTime, 'vod_', props.tenant);
+          saveResumePosition(vodId, pauseTime, 'vod_', props.channel);
         }
         break;
       default:
@@ -159,7 +158,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
             if ((video.part ?? 0) >= part.part) break;
             t += video.duration ?? 0;
           }
-          saveResumePosition(vodId, t, 'vod_', props.tenant);
+          saveResumePosition(vodId, t, 'vod_', props.channel);
           lastSaveRef.current = now;
         }
       }
@@ -173,7 +172,7 @@ export default function YoutubeVod(props: YoutubeVodProps) {
         if ((video.part ?? 0) >= part.part) break;
         t += video.duration ?? 0;
       }
-      saveResumePosition(vodId, t, 'vod_', props.tenant);
+      saveResumePosition(vodId, t, 'vod_', props.channel);
       lastSaveRef.current = Date.now();
     }
 

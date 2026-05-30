@@ -32,7 +32,7 @@ export interface BaseVodProps {
   cdnBase?: string;
   logo?: string;
   isPortrait?: boolean;
-  tenant: string;
+  channel: string;
 }
 
 export default function BaseVod(props: BaseVodProps) {
@@ -53,7 +53,7 @@ export default function BaseVod(props: BaseVodProps) {
     games,
     cdnBase,
     isPortrait,
-    tenant,
+    channel,
   } = props;
   const part = partValue ?? null;
   const [theatreMode, setTheatreMode] = useState(false);
@@ -155,7 +155,7 @@ export default function BaseVod(props: BaseVodProps) {
               theatreMode={theatreMode}
               setTheatreMode={setTheatreMode}
               copyTimestamp={copyTimestamp}
-              tenant={tenant}
+              channel={channel}
             />
           ) : games ? (
             <YoutubePlayer
@@ -169,7 +169,7 @@ export default function BaseVod(props: BaseVodProps) {
               theatreMode={theatreMode}
               setTheatreMode={setTheatreMode}
               copyTimestamp={copyTimestamp}
-              tenant={tenant}
+              channel={channel}
             />
           ) : (
             <CustomPlayer
