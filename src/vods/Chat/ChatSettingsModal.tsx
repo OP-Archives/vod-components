@@ -44,7 +44,7 @@ interface ChatSettingsModalProps {
 
 export default function ChatSettingsModal(props: ChatSettingsModalProps) {
   const {
-    userChatDelay: _userChatDelay,
+    userChatDelay,
     setUserChatDelay,
     showModal,
     setShowModal,
@@ -63,14 +63,12 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
   const [filterWords, setFilterWords] = useState<string[]>([]);
   const [customFont, setCustomFont] = useState('');
   const [showCustomFont, setShowCustomFont] = useState(false);
-  const [delayInput, setDelayInput] = useState('0');
+  const [rawDelay, setRawDelay] = useState(String(userChatDelay));
   const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   useEffect(() => {
-    if (showModal) {
-      setDelayInput('0');
-    }
-  }, [showModal]);
+    setRawDelay(String(userChatDelay));
+  }, [userChatDelay]);
 
   useEffect(() => {
     if (showModal) {
@@ -98,13 +96,16 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
     }
   }, [showModal, setFontFamily, setMessageFontSize, setChatOnLeft]);
 
-  const handleDelayChange = (value: string) => {
-    setDelayInput(value);
-    if (!isNaN(Number(value))) {
-      setUserChatDelay(Number(value));
-    } else if (value === '') {
-      setUserChatDelay(0);
+  const debouncedDelayChange = useDebouncedCallback((value: unknown) => {
+    const num = Number(value);
+    if (!isNaN(num)) {
+      setUserChatDelay(num);
     }
+  }, 300);
+
+  const handleDelayChange = (value: string) => {
+    setRawDelay(value);
+    debouncedDelayChange(value);
   };
 
   const saveSetting = (key: string, value: unknown) => {
@@ -205,6 +206,10 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
     saveSetting('chatOnLeft', false);
   };
 
+  const handleResetDelay = () => {
+    setUserChatDelay(0);
+  };
+
   const handleResetAll = () => {
     safeLocalStorage.removeItem('chatSettings');
     setFilterWords([]);
@@ -213,6 +218,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
     setFontFamily(DEFAULT_SETTINGS.fontFamily);
     setMessageFontSize(DEFAULT_SETTINGS.messageFontSize);
     setChatOnLeft(DEFAULT_SETTINGS.chatOnLeft);
+    setUserChatDelay(0);
     document.documentElement.style.removeProperty('--chat-font-family');
     document.documentElement.style.removeProperty('--chat-font-size-message');
     document.documentElement.style.removeProperty('--chat-font-size-timestamp');
@@ -263,7 +269,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                     <select
                       value={fontFamily}
                       onChange={(e) => handleFontChange(e.target.value)}
-                      className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#222230] focus:outline-none"
+                      className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#6366f1] focus:outline-none"
                     >
                       {FONT_OPTIONS.map((font) => (
                         <option key={font.value} value={font.value}>
@@ -300,7 +306,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                         e.key === 'Enter' && handleCustomFontSubmit()
                       }
                       placeholder="e.g. 'Fira Code', monospace"
-                      className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#222230] focus:outline-none"
+                      className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#6366f1] focus:outline-none"
                       autoFocus
                     />
                     <button
@@ -336,7 +342,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
               {!showCustomFont && !selectedFont && (
                 <button
                   onClick={() => setShowCustomFont(true)}
-                  className="mt-2 text-xs font-medium text-white hover:text-[#9ca3af]"
+                  className="mt-2 text-xs font-medium text-[#6366f1] hover:text-[#818cf8]"
                 >
                   + Use custom font
                 </button>
@@ -353,7 +359,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                   step={1}
                   value={messageFontSize}
                   onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
-                  className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-[#222230] accent-white"
+                  className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-[#222230] accent-[#6366f1]"
                 />
                 <span className="w-10 text-right text-sm font-medium whitespace-nowrap text-[#9ca3af]">
                   {messageFontSize}px
@@ -387,7 +393,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                     setChatWidth(num);
                     debouncedSaveSetting('chatWidth', num);
                   }}
-                  className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-[#222230] accent-white"
+                  className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-[#222230] accent-[#6366f1]"
                 />
                 <span className="w-12 text-right text-sm font-medium whitespace-nowrap text-[#9ca3af]">
                   {chatWidth ?? 340}px
@@ -412,12 +418,22 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  value={delayInput}
+                  className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#6366f1] focus:outline-none"
+                  value={rawDelay}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => handleDelayChange(e.target.value)}
                   onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                  className="flex-1 rounded-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#222230] focus:outline-none"
                 />
                 <span className="text-sm font-medium whitespace-nowrap text-[#9ca3af]">secs</span>
+                <button
+                  onClick={handleResetDelay}
+                  disabled={userChatDelay === 0}
+                  className={`flex h-[42px] w-[42px] items-center justify-center self-center rounded-lg border border-[#222230] bg-[#222230] transition-colors ${
+                    userChatDelay === 0 ? 'cursor-not-allowed opacity-40' : 'text-[#9ca3af] hover:text-[#f0f0f5]'
+                  }`}
+                  title="Reset chat delay"
+                >
+                  <RotateCcw size={16} />
+                </button>
               </div>
             </div>
 
@@ -427,7 +443,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                 <input
                   id="filter-word-input"
                   type="text"
-                  className="flex-1 rounded-l-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#222230] focus:outline-none"
+                  className="flex-1 rounded-l-lg border border-[#222230] bg-[#222230] px-3 py-2.5 text-sm text-[#f0f0f5] transition-all focus:border-[#6366f1] focus:outline-none"
                   placeholder="Add word to filter"
                   onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleAddWord()}
                 />
@@ -472,7 +488,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                     setShowTimestamp(!showTimestamp);
                     debouncedSaveSetting('showTimestamp', !showTimestamp);
                   }}
-                  className="h-4 w-4 cursor-pointer rounded accent-white"
+                  className="h-4 w-4 cursor-pointer rounded accent-[#6366f1]"
                 />
                 <label htmlFor="show-timestamp" className="cursor-pointer text-sm font-medium text-[#f0f0f5]">
                   Show Timestamps
@@ -500,7 +516,7 @@ export default function ChatSettingsModal(props: ChatSettingsModalProps) {
                     setChatOnLeft(!chatOnLeft);
                     saveSetting('chatOnLeft', !chatOnLeft);
                   }}
-                  className="h-4 w-4 cursor-pointer rounded accent-white"
+                  className="h-4 w-4 cursor-pointer rounded accent-[#6366f1]"
                 />
                 <label htmlFor="chat-on-left" className="cursor-pointer text-sm font-medium text-[#f0f0f5]">
                   Chat on Left
