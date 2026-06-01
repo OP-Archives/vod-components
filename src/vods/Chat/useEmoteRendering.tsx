@@ -26,7 +26,15 @@ interface UseEmoteRenderingOptions {
     bttv_emotes?: BttvEmote[];
     seventv_emotes?: SevenTVEmote[];
   };
-  badgesRef: React.RefObject<Record<'channel' | 'global', Badge[]> | undefined>;
+  badgesRef: React.RefObject<
+    | {
+        platform: 'twitch' | 'kick';
+        channel: Badge[];
+        global: Badge[];
+        kickBadges: Record<string, string>;
+      }
+    | undefined
+  >;
   platform: string;
 }
 
@@ -344,40 +352,154 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
       }
 
       const badgeWrapper: React.ReactElement[] = [];
-      const { channel: channelBadges, global: globalBadges } = badgesRef.current;
 
-      for (let i = 0; i < textBadges!.length; i++) {
-        const textBadge = textBadges![i];
-        const badgeId = textBadge._id ?? textBadge.setID;
-        const version = textBadge.version;
+      if (badgesRef.current.platform === 'kick') {
+        const milestoneKeys = Object.keys(badgesRef.current.kickBadges)
+          .map((k) => k.replace('subscriber_', ''))
+          .sort((a, b) => Number(a) - Number(b));
 
-        const badge =
-          channelBadges?.find((b: Badge) => b.set_id === badgeId) ||
-          globalBadges?.find((b: Badge) => b.set_id === badgeId);
-        if (!badge) continue;
+        for (let i = 0; i < textBadges!.length; i++) {
+          const textBadge = textBadges![i];
+          if (textBadge.url) continue;
 
-        const badgeVersion = badge.versions.find((v: BadgeVersion) => v.id === version);
-        if (!badgeVersion) continue;
-
-        badgeWrapper.push(
-          <MessageTooltip
-            key={`${keyPrefix}-badge-${badgeId}-${version}`}
-            title={
-              <div className="flex w-fit flex-col items-center">
-                <img className="mb-[0.3rem] max-w-full border-none align-top" src={badgeVersion.image_url_4x} alt="" />
-                <p className="block text-xs">{`${badgeId}`}</p>
-              </div>
+          if (textBadge.setID === 'subscriber') {
+            const version = Number(textBadge.badgeVersionId);
+            let matchedMilestone: string | null = null;
+            for (const key of milestoneKeys) {
+              if (Number(key) <= version) matchedMilestone = key;
+              else break;
             }
-          >
-            <img
-              className="inline-block h-[1rem] min-w-[1rem] align-middle"
-              style={{ margin: '0 0.2rem 0.1rem 0', backgroundPosition: '50%' }}
-              srcSet={`${badgeVersion.image_url_1x} 1x, ${badgeVersion.image_url_2x} 2x, ${badgeVersion.image_url_4x} 4x`}
-              src={badgeVersion.image_url_1x}
-              alt=""
-            />
-          </MessageTooltip>
-        );
+            if (!matchedMilestone) continue;
+            const key = `subscriber_${matchedMilestone}`;
+            const url = badgesRef.current.kickBadges[key];
+            if (!url) continue;
+
+            badgeWrapper.push(
+              <MessageTooltip
+                key={`${keyPrefix}-badge-${key}`}
+                title={
+                  <div className="flex w-fit flex-col items-center">
+                    <img className="mb-[0.3rem] max-w-full border-none align-top" src={url} alt="" />
+                    <p className="block text-xs">{`${textBadge.badgeVersionId}-Month Subscriber`}</p>
+                  </div>
+                }
+              >
+                <img
+                  className="inline-block h-[1rem] min-w-[1rem] align-middle"
+                  style={{ margin: '0 0.2rem 0.1rem 0', backgroundPosition: '50%' }}
+                  src={url}
+                  alt=""
+                />
+              </MessageTooltip>
+            );
+          } else if (textBadge.setID === 'sub_gifter') {
+            badgeWrapper.push(
+              <MessageTooltip
+                key={`${keyPrefix}-badge-sub_gifter-${textBadge.badgeVersionId}`}
+                title={
+                  <div className="flex w-fit flex-col items-center">
+                    <svg
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mb-[0.3rem] size-[calc(1em*(18/13))]"
+                      style={{ margin: '0 0 0.3rem 0' }}
+                    >
+                      <g clipPath="url(#clip0_162_470)">
+                        <g clipPath="url(#clip1_162_470)">
+                          <path d="M22.34 9.5L26 4H18L16 7L14 4H6L9.66 9.5H4V15.1H28V9.5H22.34Z" fill="#53FC18" />
+                          <path d="M26.0799 19.0996H5.8999V28.4996H26.0799V19.0996Z" fill="#53FC18" />
+                          <path d="M26.0799 15.0996H5.8999V19.0996H26.0799V15.0996Z" fill="#32970E" />
+                        </g>
+                      </g>
+                      <defs>
+                        <clipPath id="clip0_162_470">
+                          <rect width="24" height="24.5" fill="white" transform="translate(4 4)" />
+                        </clipPath>
+                        <clipPath id="clip1_162_470">
+                          <rect width="24" height="24.5" fill="white" transform="translate(4 4)" />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                    <p className="block text-xs">{`Gifted ${textBadge.badgeVersionId} subs`}</p>
+                  </div>
+                }
+              >
+                <svg
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="inline-block h-[1rem] min-w-[1rem] align-middle"
+                  style={{ margin: '0 0.2rem 0.1rem 0', backgroundPosition: '50%' }}
+                >
+                  <g clipPath="url(#clip0_162_470)">
+                    <g clipPath="url(#clip1_162_470)">
+                      <path d="M22.34 9.5L26 4H18L16 7L14 4H6L9.66 9.5H4V15.1H28V9.5H22.34Z" fill="#53FC18" />
+                      <path d="M26.0799 19.0996H5.8999V28.4996H26.0799V19.0996Z" fill="#53FC18" />
+                      <path d="M26.0799 15.0996H5.8999V19.0996H26.0799V15.0996Z" fill="#32970E" />
+                    </g>
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_162_470">
+                      <rect width="24" height="24.5" fill="white" transform="translate(4 4)" />
+                    </clipPath>
+                    <clipPath id="clip1_162_470">
+                      <rect width="24" height="24.5" fill="white" transform="translate(4 4)" />
+                    </clipPath>
+                  </defs>
+                </svg>
+              </MessageTooltip>
+            );
+          }
+        }
+      } else {
+        const { channel: channelBadges, global: globalBadges } = badgesRef.current;
+
+        for (let i = 0; i < textBadges!.length; i++) {
+          const textBadge = textBadges![i];
+          const badgeId = textBadge._id ?? textBadge.setID;
+          const version = textBadge.version;
+
+          const badge =
+            channelBadges?.find((b: Badge) => b.set_id === badgeId) ||
+            globalBadges?.find((b: Badge) => b.set_id === badgeId);
+          if (!badge) continue;
+
+          const badgeVersion = badge.versions.find((v: BadgeVersion) => v.id === version);
+          if (!badgeVersion) continue;
+
+          badgeWrapper.push(
+            <MessageTooltip
+              key={`${keyPrefix}-badge-${badgeId}-${version}`}
+              title={
+                <div className="flex w-fit flex-col items-center">
+                  <img
+                    className="mb-[0.3rem] max-w-full border-none align-top"
+                    src={badgeVersion.image_url_4x}
+                    alt=""
+                  />
+                  <p className="block text-xs">
+                    {badgeId === 'subscriber'
+                      ? version === '0' || version === '1'
+                        ? 'Subscriber'
+                        : `${version}-Month Subscriber`
+                      : version !== '1'
+                        ? `${badgeId} ${version}`
+                        : badgeId}
+                  </p>
+                </div>
+              }
+            >
+              <img
+                className="inline-block h-[1rem] min-w-[1rem] align-middle"
+                style={{ margin: '0 0.2rem 0.1rem 0', backgroundPosition: '50%' }}
+                srcSet={`${badgeVersion.image_url_1x} 1x, ${badgeVersion.image_url_2x} 2x, ${badgeVersion.image_url_4x} 4x`}
+                src={badgeVersion.image_url_1x}
+                alt=""
+              />
+            </MessageTooltip>
+          );
+        }
       }
 
       return <span style={{ display: 'inline' }}>{badgeWrapper}</span>;

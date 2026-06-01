@@ -105,7 +105,9 @@ export interface MessageFragment {
 export interface UserBadge {
   _id?: string;
   setID: string;
-  version: string;
+  version?: string;
+  badgeVersionId?: string;
+  url?: string;
 }
 
 // Badges types

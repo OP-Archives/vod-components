@@ -123,7 +123,15 @@ export default function Chat(props: ChatProps) {
     seventv_emotes: [],
   });
   const [showModal, setShowModal] = useState(false);
-  const badgesRef = useRef<Record<'channel' | 'global', Badge[]> | undefined>(undefined);
+  const badgesRef = useRef<
+    | {
+        platform: 'twitch' | 'kick';
+        channel: Badge[];
+        global: Badge[];
+        kickBadges: Record<string, string>;
+      }
+    | undefined
+  >(undefined);
 
   const {
     showTimestamp,
@@ -226,7 +234,11 @@ export default function Chat(props: ChatProps) {
     const abortController = new AbortController();
 
     const loadBadges = () => {
-      fetch(`${archiveApiBase}/${channelName}/badges/twitch`, {
+      const url =
+        platform === 'kick'
+          ? `${archiveApiBase}/${channelName}/badges/kick`
+          : `${archiveApiBase}/${channelName}/badges/twitch`;
+      fetch(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: abortController.signal,
@@ -237,12 +249,27 @@ export default function Chat(props: ChatProps) {
           return response.data;
         })
         .then((data) => {
-          badgesRef.current = data || { channel: [], global: [] };
+          if (platform === 'kick') {
+            const subscriber = (data as { subscriber: Record<string, string> }).subscriber || {};
+            const kickBadges: Record<string, string> = {};
+            for (const [month, url] of Object.entries(subscriber)) {
+              kickBadges[`subscriber_${month}`] = url;
+            }
+            badgesRef.current = { platform: 'kick', channel: [], global: [], kickBadges };
+          } else {
+            const twitchData = (data as { channel: Badge[]; global: Badge[] }) || { channel: [], global: [] };
+            badgesRef.current = {
+              platform: 'twitch',
+              channel: twitchData.channel,
+              global: twitchData.global,
+              kickBadges: {},
+            };
+          }
         })
         .catch((e) => {
           if (e.name !== 'AbortError') {
             console.error('Badge loading failed:', e);
-            badgesRef.current = { channel: [], global: [] };
+            badgesRef.current = { platform: platform as 'twitch' | 'kick', channel: [], global: [], kickBadges: {} };
           }
         });
     };
