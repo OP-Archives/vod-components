@@ -360,7 +360,31 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
 
         for (let i = 0; i < textBadges!.length; i++) {
           const textBadge = textBadges![i];
-          if (textBadge.url) continue;
+          if (textBadge.url) {
+            const badgeTitle = textBadge.setID
+              ? `${textBadge.setID.charAt(0).toUpperCase() + textBadge.setID.slice(1)} ${textBadge.badgeVersionId || ''}`.trim()
+              : 'Badge';
+
+            badgeWrapper.push(
+              <MessageTooltip
+                key={`${keyPrefix}-badge-global-${textBadge.setID}-${textBadge.badgeVersionId || i}`}
+                title={
+                  <div className="flex w-fit flex-col items-center">
+                    <img className="mb-[0.3rem] h-[2rem] w-auto border-none align-top" src={textBadge.url} alt="" />
+                    <p className="block text-xs">{badgeTitle}</p>
+                  </div>
+                }
+              >
+                <img
+                  className="inline-block h-[1rem] min-w-[1rem] align-middle"
+                  style={{ margin: '0 0.2rem 0.1rem 0', backgroundPosition: '50%' }}
+                  src={textBadge.url}
+                  alt=""
+                />
+              </MessageTooltip>
+            );
+            continue;
+          }
 
           if (textBadge.setID === 'subscriber') {
             const version = Number(textBadge.badgeVersionId);
