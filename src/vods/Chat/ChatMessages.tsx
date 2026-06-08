@@ -7,13 +7,15 @@ interface ChatMessagesProps {
   scrolling: boolean;
   scrollToBottom: () => void;
   chatRef: React.MutableRefObject<HTMLElement | null>;
+  bottomAnchorRef: React.RefObject<HTMLDivElement | null>;
   handleScroll: () => void;
   isLoading: boolean;
   commentsCount: number;
 }
 
 export default function ChatMessages(props: ChatMessagesProps) {
-  const { shownMessages, scrolling, scrollToBottom, chatRef, handleScroll, isLoading, commentsCount } = props;
+  const { shownMessages, scrolling, scrollToBottom, chatRef, bottomAnchorRef, handleScroll, isLoading, commentsCount } =
+    props;
 
   if (commentsCount === 0) {
     if (isLoading) {
@@ -35,11 +37,15 @@ export default function ChatMessages(props: ChatMessagesProps) {
       <div
         ref={chatRef as React.Ref<HTMLDivElement>}
         onScroll={handleScroll}
-        className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto"
+        className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto chat-scrollbar"
+        style={{ overflowAnchor: 'none' }}
       >
         <div className="min-h-0 flex-1"></div>
 
-        <div className="flex shrink-0 flex-col py-2">{shownMessages}</div>
+        <div className="flex shrink-0 flex-col py-2">
+          {shownMessages}
+          <div ref={bottomAnchorRef} className="h-[1px] w-full shrink-0 opacity-0 pointer-events-none" />
+        </div>
       </div>
       {scrolling && (
         <div className="relative flex justify-center">
