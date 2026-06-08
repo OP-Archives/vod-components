@@ -41,14 +41,8 @@ export const extractEmojis = (text: string): { text?: string; emoji?: string }[]
   while (i < codepoints.length) {
     const char = codepoints[i];
     if (emojiTest(char)) {
-      let emoji = char;
-      let j = i + 1;
-      while (j < codepoints.length && emojiTest(codepoints[j])) {
-        emoji += codepoints[j];
-        j++;
-      }
-      result.push({ emoji });
-      i = j;
+      result.push({ emoji: char });
+      i++;
     } else {
       let textPart = '';
       while (i < codepoints.length && !emojiTest(codepoints[i])) {

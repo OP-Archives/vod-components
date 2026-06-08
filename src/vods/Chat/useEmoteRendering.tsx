@@ -287,15 +287,15 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
               lastNormalEmoteData = null;
               if (emojiTest(word)) {
                 const parts = extractEmojis(word);
-                for (const part of parts) {
+                parts.forEach((part, pIndex) => {
                   if (part.text) {
                     textFragments.push(
-                      <span key={`${keyPrefix}-frag-${fIndex}-text-${part.text}-${i}`}>{part.text}</span>
+                      <span key={`${keyPrefix}-frag-${fIndex}-text-${part.text}-${i}-${pIndex}`}>{part.text}</span>
                     );
                   } else {
                     textFragments.push(
                       <MessageTooltip
-                        key={`${keyPrefix}-frag-${fIndex}-twemoji-${part.emoji}-${i}`}
+                        key={`${keyPrefix}-frag-${fIndex}-twemoji-${part.emoji}-${i}-${pIndex}`}
                         title={
                           <div className="flex w-fit flex-col items-center">
                             <Twemoji options={{ className: 'twemoji' }}>{part.emoji}</Twemoji>
@@ -309,7 +309,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
                       </MessageTooltip>
                     );
                   }
-                }
+                });
                 textFragments.push(' ');
               } else if (URL_REGEX.test(word)) {
                 textFragments.push(
