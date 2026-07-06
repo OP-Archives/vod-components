@@ -62,10 +62,10 @@ const MemoizedComment = memo(function MemoizedComment({
         style={{ fontFamily, fontSize: `${messageFontSize}px` }}
       >
         {comment.user_badges && transformBadges(comment.user_badges, `comment-${comment.id}`)}
-        <span className="font-bold" style={{ color: adjustUsernameColor(comment.user_color), verticalAlign: "middle"}}>
+        <span className="font-bold" style={{ color: adjustUsernameColor(comment.user_color), verticalAlign: 'middle' }}>
           {comment.display_name}
         </span>
-        <span style={{verticalAlign: "middle"}}>: </span>
+        <span style={{ verticalAlign: 'middle' }}>: </span>
         {transformMessage(comment.message, `comment-${comment.id}`)}
       </div>
     </div>

@@ -322,7 +322,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
                 textFragments.push(
                   <a
                     key={`${keyPrefix}-frag-${fIndex}-text-${word}-${i}`}
-                    href={`/leave?target=${encodeURIComponent(word)}`}
+                    href={word}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[var(--chat-accent)] hover:underline"
@@ -396,8 +396,8 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
           if (textBadge.setID === 'subscriber') {
             const version = Number(textBadge.badgeVersionId);
             let matchedMilestone: string | null = null;
-            for (const key of milestoneKeys) {
-              if (Number(key) <= version) matchedMilestone = key;
+            for (const m of milestoneKeys) {
+              if (Number(m) <= version) matchedMilestone = m;
               else break;
             }
             if (!matchedMilestone) continue;
@@ -486,14 +486,21 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
       } else {
         const { channel: channelBadges, global: globalBadges } = badgesRef.current;
 
+        const channelBadgeMap = new Map<string, Badge>();
+        for (const b of channelBadges || []) {
+          channelBadgeMap.set(b.set_id, b);
+        }
+        const globalBadgeMap = new Map<string, Badge>();
+        for (const b of globalBadges || []) {
+          globalBadgeMap.set(b.set_id, b);
+        }
+
         for (let i = 0; i < textBadges!.length; i++) {
           const textBadge = textBadges![i];
           const badgeId = textBadge._id ?? textBadge.setID;
           const version = textBadge.version;
 
-          const badge =
-            channelBadges?.find((b: Badge) => b.set_id === badgeId) ||
-            globalBadges?.find((b: Badge) => b.set_id === badgeId);
+          const badge = channelBadgeMap.get(badgeId) || globalBadgeMap.get(badgeId);
           if (!badge) continue;
 
           const badgeVersion = badge.versions.find((v: BadgeVersion) => v.id === version);
