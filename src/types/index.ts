@@ -70,6 +70,8 @@ export interface FfzEmote {
 export interface BttvEmote {
   id: string;
   code: string;
+  width?: number;
+  height?: number;
 }
 
 export interface SevenTVEmote {
@@ -77,6 +79,8 @@ export interface SevenTVEmote {
   code: string;
   name?: string;
   flags: number;
+  width?: number;
+  height?: number;
 }
 
 // Comments types
@@ -149,6 +153,8 @@ export interface EmoteEntry {
   code: string;
   name?: string;
   provider: EmoteProvider;
+  width?: number;
+  height?: number;
   [key: string]: unknown;
 }
 

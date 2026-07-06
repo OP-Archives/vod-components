@@ -75,7 +75,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
       case 'BTTV':
         return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/${size === 4 ? 2 : size}x`;
       case '7TV':
-        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/${size}x.webp`;
+        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/${size}x.avif`;
       case 'Kick':
         return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize`;
       default:
@@ -90,7 +90,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
       case 'BTTV':
         return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/1x 1x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/2x 2x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/3x 3x`;
       case '7TV':
-        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/1x.webp 1x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/2x.webp 2x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/3x.webp 3x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/4x.webp 4x`;
+        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/1x.avif 1x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/2x.avif 2x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/3x.avif 3x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/4x.avif 4x`;
       case 'Kick':
         return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize 1x`;
       default:
@@ -107,6 +107,13 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
     return type === 'Kick'
       ? 'h-auto min-h-[28px] max-h-[32px] w-auto max-w-full border-none'
       : 'h-auto min-h-[28px] w-auto max-w-full border-none';
+  }, []);
+
+  const getEmoteImageStyle = useCallback((emote: EmoteEntry): React.CSSProperties => {
+    if (emote.width && emote.height) {
+      return { width: `${emote.width}px`, height: `${emote.height}px` };
+    }
+    return {};
   }, []);
 
   const renderEmoteTooltip = useCallback(
@@ -131,7 +138,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
           <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
             <img
               className={getEmoteImageClassName(emoteType)}
-              style={{ verticalAlign: 'middle' }}
+              style={{ ...getEmoteImageStyle(emote), verticalAlign: 'middle' }}
               src={getEmoteImageUrl(emote, emoteType)}
               srcSet={getEmoteImageSrcSet(emote, emoteType)}
               alt={word}
@@ -140,7 +147,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
         </MessageTooltip>
       );
     },
-    [getEmoteImageUrl, getEmoteImageSrcSet, getEmoteImageClassName]
+    [getEmoteImageUrl, getEmoteImageSrcSet, getEmoteImageClassName, getEmoteImageStyle]
   );
 
   const renderCombinedEmoteTooltip = useCallback(
@@ -178,14 +185,14 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
           <span style={{ display: 'inline-block', position: 'relative', verticalAlign: 'middle' }}>
             <img
               className={getEmoteImageClassName(normalType)}
-              style={{ verticalAlign: 'middle' }}
+              style={{ ...getEmoteImageStyle(normalEmote), verticalAlign: 'middle' }}
               src={getEmoteImageUrl(normalEmote, normalType)}
               srcSet={getEmoteImageSrcSet(normalEmote, normalType)}
               alt={normalEmote.code}
             />
             <img
               className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${getEmoteImageClassName(zwType)} border-none align-middle`}
-              style={{ verticalAlign: 'middle' }}
+              style={{ ...getEmoteImageStyle(zwEmote), verticalAlign: 'middle' }}
               src={getEmoteImageUrl(zwEmote, zwType)}
               srcSet={getEmoteImageSrcSet(zwEmote, zwType)}
               alt={zwEmote.code}
@@ -194,7 +201,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
         </MessageTooltip>
       );
     },
-    [getEmoteImageUrl, getEmoteImageSrcSet, getEmoteImageClassName]
+    [getEmoteImageUrl, getEmoteImageSrcSet, getEmoteImageClassName, getEmoteImageStyle]
   );
 
   const transformMessage = useCallback(
@@ -260,7 +267,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
                       <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
                         <img
                           className="h-auto min-h-[28px] w-auto max-w-full border-none"
-                          style={{ verticalAlign: 'middle' }}
+                          style={{ ...getEmoteImageStyle(emote), verticalAlign: 'middle' }}
                           src={getEmoteImageUrl(emote, emote.provider)}
                           srcSet={getEmoteImageSrcSet(emote, emote.provider)}
                           alt={word}
@@ -526,7 +533,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
         }
       }
 
-      return <span style={{ display: 'inline' }}>{badgeWrapper}</span>;
+      return <>{badgeWrapper}</>;
     },
     [badgesRef]
   );
