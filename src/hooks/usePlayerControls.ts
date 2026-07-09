@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import type { Chapter } from '../types';
 import { useAutoHideControls } from './useAutoHideControls';
 import { useSettingsMenu } from './useSettingsMenu';
 import { useTooltipControls } from './useTooltipControls';
@@ -7,6 +8,7 @@ interface UsePlayerControlsOptions {
   isPlaying: boolean;
   playerContainerRef: React.RefObject<HTMLDivElement | null>;
   duration: number;
+  chapters?: Chapter[];
 }
 
 export interface UsePlayerControlsReturn {
@@ -22,10 +24,11 @@ export interface UsePlayerControlsReturn {
   progressTooltipRef: React.RefObject<HTMLDivElement | null>;
   volumeTooltipRef: React.RefObject<HTMLDivElement | null>;
   settingsMenuRef: React.RefObject<HTMLDivElement | null>;
-  handleProgressMouseMove: (e: React.MouseEvent<HTMLInputElement>) => void;
-  handleProgressTouchMove: (e: React.TouchEvent<HTMLInputElement>) => void;
+  handleProgressMouseMove: (e: React.MouseEvent<HTMLElement>) => void;
+  handleProgressTouchMove: (e: React.TouchEvent<HTMLElement>) => void;
   handleProgressTouchEnd: () => void;
   handleProgressMouseLeave: () => void;
+  updateProgressTooltip: (percentage: number, trackWidth: number) => void;
   handleVolumeMouseMove: (e: React.MouseEvent<HTMLInputElement>) => void;
   handleVolumeTouchMove: (e: React.TouchEvent<HTMLInputElement>) => void;
   handleVolumeTouchEnd: () => void;
@@ -33,12 +36,14 @@ export interface UsePlayerControlsReturn {
   handleVolumeMouseUp: () => void;
   handleVolumeMouseDown: () => void;
   handleCloseSettings: () => void;
+  getCurrentChapter: (time: number) => Chapter | undefined;
 }
 
 export function usePlayerControls({
   isPlaying,
   playerContainerRef,
   duration,
+  chapters,
 }: UsePlayerControlsOptions): UsePlayerControlsReturn {
   const [isMenuOpen, _setIsMenuOpen] = useState(false);
 
@@ -48,7 +53,7 @@ export function usePlayerControls({
     playerContainerRef,
   });
 
-  const tooltipControls = useTooltipControls({ duration });
+  const tooltipControls = useTooltipControls({ duration, chapters });
 
   const {
     settingsAnchorEl,
@@ -87,6 +92,7 @@ export function usePlayerControls({
     handleProgressTouchMove: tooltipControls.handleProgressTouchMove,
     handleProgressTouchEnd: tooltipControls.handleProgressTouchEnd,
     handleProgressMouseLeave: tooltipControls.handleProgressMouseLeave,
+    updateProgressTooltip: tooltipControls.updateProgressTooltip,
     handleVolumeMouseMove: tooltipControls.handleVolumeMouseMove,
     handleVolumeTouchMove: tooltipControls.handleVolumeTouchMove,
     handleVolumeTouchEnd: tooltipControls.handleVolumeTouchEnd,
@@ -94,5 +100,6 @@ export function usePlayerControls({
     handleVolumeMouseUp: tooltipControls.handleVolumeMouseUp,
     handleVolumeMouseDown: tooltipControls.handleVolumeMouseDown,
     handleCloseSettings: wrappedHandleCloseSettings,
+    getCurrentChapter: tooltipControls.getCurrentChapter,
   };
 }

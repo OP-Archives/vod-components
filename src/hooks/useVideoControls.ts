@@ -136,9 +136,10 @@ export function useVideoControls({
       const seekValue = typeof newValue === 'number' ? newValue : newValue[0];
       if (playerRef.current) {
         playerRef.current.currentTime = seekValue;
+        setCurrentTime(seekValue);
       }
     },
-    [playerRef]
+    [playerRef, setCurrentTime]
   );
 
   const handlePlaybackSpeedChange = useCallback(

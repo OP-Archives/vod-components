@@ -9,7 +9,6 @@ interface UseCustomPlayerOptions {
   vod: VOD;
   cdnBase?: string;
   playerRef: React.RefObject<HTMLVideoElement | null>;
-  setCurrentTime: (_time: number) => void;
   setDelay?: (_delay: number) => void;
   setPlayerState: (_state: PlayerState) => void;
   defaultVolume: number;

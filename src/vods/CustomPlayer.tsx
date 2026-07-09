@@ -1,7 +1,7 @@
 import { Play, Loader2 } from 'lucide-react';
 import { useRef, useEffect, ChangeEvent } from 'react';
 import { useCustomPlayer } from '../hooks/useCustomPlayer';
-import type { VOD, PlayerState, PlayerSettings, PlayerSource } from '../types';
+import type { VOD, PlayerState, PlayerSettings, PlayerSource, Chapter } from '../types';
 import PlayerControls from './PlayerControls';
 
 const setVideoCurrentTime = (video: HTMLVideoElement, time: number) => {
@@ -23,6 +23,8 @@ export interface PlayerProps {
   copyTimestamp: () => void;
   playerRef: React.RefObject<HTMLVideoElement | null>;
   onUpdateSettings?: (_settings: PlayerSettings) => void;
+  chapters?: Chapter[];
+  currentChapter?: Chapter | null;
 }
 
 export default function Player(props: PlayerProps) {
@@ -41,6 +43,8 @@ export default function Player(props: PlayerProps) {
     copyTimestamp,
     playerRef,
     onUpdateSettings,
+    chapters,
+    currentChapter,
   } = props;
 
   const playerContainerRef = useRef<HTMLDivElement | null>(null);
@@ -78,7 +82,6 @@ export default function Player(props: PlayerProps) {
     vod,
     cdnBase,
     playerRef,
-    setCurrentTime,
     setDelay,
     setPlayerState,
     defaultVolume,
@@ -90,6 +93,10 @@ export default function Player(props: PlayerProps) {
     if (!playerRef.current || timestamp === undefined || !source) return;
     setVideoCurrentTime(playerRef.current, timestamp);
   }, [timestamp, source, playerRef]);
+
+  useEffect(() => {
+    setCurrentTime(currentTime);
+  }, [setCurrentTime, currentTime]);
 
   const fileChange = (evt: ChangeEvent<HTMLInputElement>) => {
     const file = evt.target.files![0];
@@ -199,6 +206,8 @@ export default function Player(props: PlayerProps) {
               playerContainerRef={playerContainerRef}
               onPlaybackSpeedChange={handlePlaybackSpeedChange}
               onCopyTimestamp={copyTimestamp}
+              chapters={chapters}
+              currentChapter={currentChapter}
             />
           </>
         )}
