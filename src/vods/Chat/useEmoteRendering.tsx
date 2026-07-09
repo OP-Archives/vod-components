@@ -339,7 +339,9 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
         }
       }
 
-      return textFragments.length > 0 ? <span style={{ display: 'inline', verticalAlign: "middle" }}>{textFragments}</span> : null;
+      return textFragments.length > 0 ? (
+        <span style={{ display: 'inline', verticalAlign: 'middle' }}>{textFragments}</span>
+      ) : null;
     },
     [
       emoteLookup,

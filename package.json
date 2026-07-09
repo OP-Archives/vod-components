@@ -9,19 +9,14 @@
   "exports": {
     ".": {
       "import": "./dist/index.es.js",
-      "types": "./dist/src/index.d.ts",
+      "types": "./dist/index.d.ts",
       "style": "./dist/index.css"
     },
-    "./index.css": "./dist/index.css",
-    "./utils/*": {
-      "import": "./dist/src/utils/*.js",
-      "types": "./dist/src/utils/*.d.ts"
-    },
-    "./vods/*": {
-      "import": "./dist/src/vods/*.js",
-      "types": "./dist/src/vods/*.d.ts"
-    }
+    "./index.css": "./dist/index.css"
   },
+  "sideEffects": [
+    "*.css"
+  ],
   "files": [
     "dist"
   ],
@@ -51,6 +46,8 @@
     "@vitejs/plugin-react": "^6.0.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "concurrently": "^10.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.62.1",
+    "@typescript-eslint/parser": "^8.62.1",
     "eslint": "^10.6.0",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-prettier": "^5.5.6",
@@ -63,8 +60,6 @@
   },
   "dependencies": {
     "@twemoji/api": "^17.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.62.1",
-    "@typescript-eslint/parser": "^8.62.1",
     "can-autoplay": "^3.0.2",
     "hls.js": "^1.6.16",
     "humanize-duration": "^3.34.0",
