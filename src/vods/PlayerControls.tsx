@@ -16,7 +16,7 @@ import {
   VolumeX,
   Check,
 } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { usePlayerControls } from '../hooks/usePlayerControls';
 import type { Chapter } from '../types';
@@ -106,6 +106,28 @@ export default function PlayerControls(props: PlayerControlsProps) {
   });
   const [dragTime, setDragTime] = useState<number | null>(null);
   const displayTime = dragTime !== null ? dragTime : currentTime;
+
+  const closeChaptersMenu = useCallback(() => {
+    setChaptersMenuOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!chaptersMenuOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        chaptersMenuRef.current &&
+        !chaptersMenuRef.current.contains(e.target as Node) &&
+        chaptersButtonRef.current &&
+        !chaptersButtonRef.current.contains(e.target as Node)
+      ) {
+        closeChaptersMenu();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [chaptersMenuOpen, closeChaptersMenu]);
 
   const progressBarRef = useRef<HTMLDivElement>(null);
   const dragOrigin = useRef({
