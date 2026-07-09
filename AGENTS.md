@@ -1,4 +1,4 @@
-# Project: admin-panel
+# Project: vod-components
 
 ## Do
 
