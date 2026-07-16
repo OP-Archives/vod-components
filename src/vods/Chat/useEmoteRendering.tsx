@@ -75,7 +75,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
       case 'BTTV':
         return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/${size === 4 ? 2 : size}x`;
       case '7TV':
-        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/${size}x.avif`;
+        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/${size}x.webp`;
       case 'Kick':
         return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize`;
       default:
@@ -90,7 +90,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
       case 'BTTV':
         return `${BASE_BTTV_EMOTE_CDN}/${emote.id}/1x 1x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/2x 2x, ${BASE_BTTV_EMOTE_CDN}/${emote.id}/3x 3x`;
       case '7TV':
-        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/1x.avif 1x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/2x.avif 2x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/3x.avif 3x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/4x.avif 4x`;
+        return `${BASE_7TV_EMOTE_CDN}/${emote.id}/1x.webp 1x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/2x.webp 2x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/3x.webp 3x, ${BASE_7TV_EMOTE_CDN}/${emote.id}/4x.webp 4x`;
       case 'Kick':
         return `${BASE_KICK_EMOTE_CDN}/${emote.id}/fullsize 1x`;
       default:
@@ -182,17 +182,17 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
             </div>
           }
         >
-          <span style={{ display: 'inline-block', position: 'relative', verticalAlign: 'middle' }}>
+          <span style={{ display: 'inline-grid', placeItems: 'center', verticalAlign: 'middle' }}>
             <img
               className={getEmoteImageClassName(normalType)}
-              style={{ ...getEmoteImageStyle(normalEmote), verticalAlign: 'middle' }}
+              style={{ ...getEmoteImageStyle(normalEmote), gridArea: '1 / 1', verticalAlign: 'middle' }}
               src={getEmoteImageUrl(normalEmote, normalType)}
               srcSet={getEmoteImageSrcSet(normalEmote, normalType)}
               alt={normalEmote.code}
             />
             <img
-              className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${getEmoteImageClassName(zwType)} border-none align-middle`}
-              style={{ ...getEmoteImageStyle(zwEmote), verticalAlign: 'middle' }}
+              className={`pointer-events-none h-auto min-h-[28px] w-auto max-w-none border-none z-10`}
+              style={{ ...getEmoteImageStyle(zwEmote), gridArea: '1 / 1', verticalAlign: 'middle' }}
               src={getEmoteImageUrl(zwEmote, zwType)}
               srcSet={getEmoteImageSrcSet(zwEmote, zwType)}
               alt={zwEmote.code}
