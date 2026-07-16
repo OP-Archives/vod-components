@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import type {
   EmoteEntry,
   EmoteProvider,
@@ -151,34 +151,43 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
   );
 
   const renderCombinedEmoteTooltip = useCallback(
-    (normalEmote: EmoteEntry, zwEmote: EmoteEntry, key: string) => {
+    (normalEmote: EmoteEntry, zwEmotes: EmoteEntry[], key: string) => {
       const normalType = normalEmote.provider;
-      const zwType = zwEmote.provider;
 
       return (
         <MessageTooltip
           key={key}
           title={
-            <div className="flex w-fit flex-col items-center gap-2">
-              <div className="flex flex-col items-center">
+            <div className="flex w-fit max-w-[280px] flex-col gap-2">
+              <div className="flex flex-col items-center self-center">
                 <img
                   className="mb-[0.3rem] w-auto border-none align-top"
                   src={getEmoteImageUrl(normalEmote, normalType, 2)}
                   alt={normalEmote.code}
                 />
-                <p className="block text-xs">{`Emote: ${normalEmote.name || normalEmote.code}`}</p>
-                <p className="block text-xs">{`${normalType} Emotes`}</p>
+                <p className="block text-xs font-bold">{normalEmote.name || normalEmote.code}</p>
+                <p className="block text-[11px] text-[#9ca3af]">{`${normalType} Emotes`}</p>
               </div>
-              <hr className="w-full border-[#222230]" />
-              <div className="flex flex-col items-center">
-                <img
-                  className="mb-[0.3rem] w-auto border-none align-top"
-                  src={getEmoteImageUrl(zwEmote, zwType, 2)}
-                  alt={zwEmote.code}
-                />
-                <p className="block text-xs">{`Zero-Width: ${zwEmote.name || zwEmote.code}`}</p>
-                <p className="block text-xs">{`${zwType} Emotes`}</p>
-              </div>
+              {zwEmotes.length > 0 && (
+                <div className="mt-1 flex w-full flex-col items-center border-t border-[#222230] pt-2">
+                  <p className="mb-1.5 text-[11px] font-semibold text-[#9ca3af]">Zero-Width</p>
+                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+                    {zwEmotes.map((zwEmote, index) => (
+                      <span
+                        key={`${zwEmote.code}-${index}`}
+                        className="flex items-center text-xs whitespace-nowrap text-[#f0f0f5]"
+                      >
+                        <img
+                          className="mr-1.5 h-[1.25rem] w-auto border-none align-middle"
+                          src={getEmoteImageUrl(zwEmote, zwEmote.provider, 1)}
+                          alt={zwEmote.code}
+                        />
+                        {zwEmote.name || zwEmote.code} ({zwEmote.provider})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           }
         >
@@ -190,13 +199,21 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
               srcSet={getEmoteImageSrcSet(normalEmote, normalType)}
               alt={normalEmote.code}
             />
-            <img
-              className={`pointer-events-none h-auto min-h-[28px] w-auto max-w-none border-none z-10`}
-              style={{ ...getEmoteImageStyle(zwEmote), gridArea: '1 / 1', verticalAlign: 'middle' }}
-              src={getEmoteImageUrl(zwEmote, zwType)}
-              srcSet={getEmoteImageSrcSet(zwEmote, zwType)}
-              alt={zwEmote.code}
-            />
+            {zwEmotes.map((zwEmote, index) => (
+              <img
+                key={`${zwEmote.code}-${index}`}
+                className={`pointer-events-none h-auto min-h-[28px] w-auto max-w-none border-none`}
+                style={{
+                  ...getEmoteImageStyle(zwEmote),
+                  gridArea: '1 / 1',
+                  verticalAlign: 'middle',
+                  zIndex: 10 + index,
+                }}
+                src={getEmoteImageUrl(zwEmote, zwEmote.provider)}
+                srcSet={getEmoteImageSrcSet(zwEmote, zwEmote.provider)}
+                alt={zwEmote.code}
+              />
+            ))}
           </span>
         </MessageTooltip>
       );
@@ -228,26 +245,21 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
           );
         } else {
           const words = fragment.text.split(' ');
-          let lastNormalEmoteData: EmoteEntry | null = null;
-          let lastNormalEmoteIndex = -1;
+          let lastNormalEmoteData: { normal: EmoteEntry; zws: EmoteEntry[]; textFragIndex: number } | null = null;
           for (let i = 0; i < words.length; i++) {
             const word = words[i];
             const emote = emoteLookup.get(word);
             if (emote) {
-              if (emote.provider === '7TV') {
-                const isZeroWidth = SEVENTV_isZeroWidth(emote);
-
-                if (isZeroWidth && lastNormalEmoteData) {
-                  const storedEmote = lastNormalEmoteData as EmoteEntry;
-                  const combinedKey = `${keyPrefix}-frag-${fIndex}-combined-${storedEmote.code}-${word}-${i}`;
-                  const combined = renderCombinedEmoteTooltip(storedEmote, emote, combinedKey);
-
-                  if (lastNormalEmoteIndex >= 0 && lastNormalEmoteIndex < textFragments.length) {
-                    textFragments[lastNormalEmoteIndex] = combined;
-                  }
-                  lastNormalEmoteData = null;
-                  lastNormalEmoteIndex = -1;
-                } else if (isZeroWidth) {
+              if (emote.provider === '7TV' && SEVENTV_isZeroWidth(emote)) {
+                if (lastNormalEmoteData) {
+                  lastNormalEmoteData.zws.push(emote);
+                  const combinedKey = `${keyPrefix}-frag-${fIndex}-combined-${lastNormalEmoteData.normal.code}-${i}`;
+                  textFragments[lastNormalEmoteData.textFragIndex] = renderCombinedEmoteTooltip(
+                    lastNormalEmoteData.normal,
+                    lastNormalEmoteData.zws,
+                    combinedKey
+                  );
+                } else {
                   const zeroWidthKey = `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`;
                   const zwSpan = (
                     <MessageTooltip
@@ -276,18 +288,11 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
                     </MessageTooltip>
                   );
                   textFragments.push(zwSpan, ' ');
-                } else {
-                  const normalKey = `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`;
-                  const normalEmoteEl = renderEmoteTooltip(emote, word, normalKey);
-                  lastNormalEmoteData = emote;
-                  lastNormalEmoteIndex = textFragments.length;
-                  textFragments.push(normalEmoteEl, ' ');
                 }
               } else {
                 const normalKey = `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`;
                 const normalEmoteEl = renderEmoteTooltip(emote, word, normalKey);
-                lastNormalEmoteData = emote;
-                lastNormalEmoteIndex = textFragments.length;
+                lastNormalEmoteData = { normal: emote, zws: [], textFragIndex: textFragments.length };
                 textFragments.push(normalEmoteEl, ' ');
               }
             } else {
