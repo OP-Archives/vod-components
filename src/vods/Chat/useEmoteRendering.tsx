@@ -226,28 +226,33 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
       if (!fragments) return null;
 
       const textFragments: (React.ReactElement | string)[] = [];
+      let lastNormalEmoteData: { normal: EmoteEntry; zws: EmoteEntry[]; textFragIndex: number } | null = null;
+
       for (let fIndex = 0; fIndex < fragments.length; fIndex++) {
         const fragment = fragments[fIndex];
 
         if (fragment.emote || fragment.emoticon) {
           const emoteID = fragment.emote ? fragment.emote.emoteID : fragment.emoticon!.emoticon_id;
+          const platformType = (platform.charAt(0).toUpperCase() + platform.slice(1)) as EmoteProvider;
+          const platformEmote: EmoteEntry = {
+            id: emoteID,
+            code: fragment.text,
+            provider: platformType,
+          };
+          lastNormalEmoteData = { normal: platformEmote, zws: [], textFragIndex: textFragments.length };
           textFragments.push(
-            renderEmoteTooltip(
-              {
-                id: emoteID,
-                code: fragment.text,
-                provider: (platform.charAt(0).toUpperCase() + platform.slice(1)) as EmoteProvider,
-              },
-              fragment.text,
-              `${keyPrefix}-frag-${fIndex}-emote-${fragment.text}`
-            ),
+            renderEmoteTooltip(platformEmote, fragment.text, `${keyPrefix}-frag-${fIndex}-emote-${fragment.text}`),
             ' '
           );
         } else {
           const words = fragment.text.split(' ');
-          let lastNormalEmoteData: { normal: EmoteEntry; zws: EmoteEntry[]; textFragIndex: number } | null = null;
           for (let i = 0; i < words.length; i++) {
             const word = words[i];
+
+            if (!word) {
+              textFragments.push(' ');
+              continue;
+            }
             const emote = emoteLookup.get(word);
             if (emote) {
               if (emote.provider === '7TV' && SEVENTV_isZeroWidth(emote)) {
