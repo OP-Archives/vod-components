@@ -151,26 +151,43 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
   );
 
   const renderCombinedEmoteTooltip = useCallback(
-    (normalEmote: EmoteEntry, zwEmotes: EmoteEntry[], key: string) => {
-      const normalType = normalEmote.provider;
+    (baseData: { normal?: EmoteEntry; twemoji?: string; isZw?: boolean }, zwEmotes: EmoteEntry[], key: string) => {
+      const normalType = baseData.normal?.provider;
+      const baseCode = baseData.twemoji || baseData.normal?.code || '';
+      const baseName = baseData.twemoji
+        ? ''
+        : baseData.isZw
+          ? baseData.normal?.name || baseData.normal?.code
+          : baseData.normal?.name || baseData.normal?.code;
+      const baseProviderLabel = baseData.twemoji
+        ? 'Twitter Emotes'
+        : baseData.isZw
+          ? 'Zero-Width'
+          : `${normalType} Emotes`;
 
       return (
         <MessageTooltip
           key={key}
           title={
-            <div className="flex w-fit max-w-[280px] flex-col gap-2">
+            <div className="flex w-fit max-w-[280px] flex-col gap-0">
               <div className="flex flex-col items-center self-center">
-                <img
-                  className="mb-[0.3rem] w-auto border-none align-top"
-                  src={getEmoteImageUrl(normalEmote, normalType, 2)}
-                  alt={normalEmote.code}
-                />
-                <p className="block text-xs font-bold">{normalEmote.name || normalEmote.code}</p>
-                <p className="block text-[11px] text-[#9ca3af]">{`${normalType} Emotes`}</p>
+                {baseData.twemoji ? (
+                  <div className="mb-[0.3rem]">
+                    <Twemoji options={{ className: 'twemoji' }}>{baseData.twemoji}</Twemoji>
+                  </div>
+                ) : (
+                  <img
+                    className="mb-[0.3rem] w-auto border-none align-top"
+                    src={getEmoteImageUrl(baseData.normal!, normalType!, 2)}
+                    alt={baseCode}
+                  />
+                )}
+                <p className="block text-xs font-bold">{baseName}</p>
+                <p className="block text-[11px] text-[#9ca3af]">{baseProviderLabel}</p>
               </div>
               {zwEmotes.length > 0 && (
-                <div className="mt-1 flex w-full flex-col items-center border-t border-[#222230] pt-2">
-                  <p className="mb-1.5 text-[11px] font-semibold text-[#9ca3af]">Zero-Width</p>
+                <div className="mt-1 flex w-full flex-col items-center border-t border-[#222230] pt-0">
+                  <p className="mb-1.5 text-[11px] font-semibold text-[#9ca3af]">Modifiers:</p>
                   <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
                     {zwEmotes.map((zwEmote, index) => (
                       <span
@@ -182,7 +199,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
                           src={getEmoteImageUrl(zwEmote, zwEmote.provider, 1)}
                           alt={zwEmote.code}
                         />
-                        {zwEmote.name || zwEmote.code} ({zwEmote.provider})
+                        - {zwEmote.name || zwEmote.code}
                       </span>
                     ))}
                   </div>
@@ -192,17 +209,25 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
           }
         >
           <span style={{ display: 'inline-grid', placeItems: 'center', verticalAlign: 'middle' }}>
-            <img
-              className={getEmoteImageClassName(normalType)}
-              style={{ ...getEmoteImageStyle(normalEmote), gridArea: '1 / 1', verticalAlign: 'middle' }}
-              src={getEmoteImageUrl(normalEmote, normalType)}
-              srcSet={getEmoteImageSrcSet(normalEmote, normalType)}
-              alt={normalEmote.code}
-            />
+            {baseData.twemoji ? (
+              <span
+                style={{ gridArea: '1 / 1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Twemoji options={{ className: 'twemoji' }}>{baseData.twemoji}</Twemoji>
+              </span>
+            ) : (
+              <img
+                className={getEmoteImageClassName(normalType!)}
+                style={{ ...getEmoteImageStyle(baseData.normal!), gridArea: '1 / 1', verticalAlign: 'middle' }}
+                src={getEmoteImageUrl(baseData.normal!, normalType!)}
+                srcSet={getEmoteImageSrcSet(baseData.normal!, normalType!)}
+                alt={baseCode}
+              />
+            )}
             {zwEmotes.map((zwEmote, index) => (
               <img
                 key={`${zwEmote.code}-${index}`}
-                className={`pointer-events-none h-auto min-h-[28px] w-auto max-w-none border-none`}
+                className="pointer-events-none h-auto min-h-[28px] w-auto max-w-none border-none"
                 style={{
                   ...getEmoteImageStyle(zwEmote),
                   gridArea: '1 / 1',
@@ -226,7 +251,13 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
       if (!fragments) return null;
 
       const textFragments: (React.ReactElement | string)[] = [];
-      let lastNormalEmoteData: { normal: EmoteEntry; zws: EmoteEntry[]; textFragIndex: number } | null = null;
+      let lastNormalEmoteData: {
+        normal?: EmoteEntry;
+        twemoji?: string;
+        zws: EmoteEntry[];
+        textFragIndex: number;
+        isZw?: boolean;
+      } | null = null;
 
       for (let fIndex = 0; fIndex < fragments.length; fIndex++) {
         const fragment = fragments[fIndex];
@@ -239,7 +270,12 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
             code: fragment.text,
             provider: platformType,
           };
-          lastNormalEmoteData = { normal: platformEmote, zws: [], textFragIndex: textFragments.length };
+          lastNormalEmoteData = {
+            normal: platformEmote,
+            twemoji: undefined,
+            zws: [],
+            textFragIndex: textFragments.length,
+          };
           textFragments.push(
             renderEmoteTooltip(platformEmote, fragment.text, `${keyPrefix}-frag-${fIndex}-emote-${fragment.text}`),
             ' '
@@ -258,50 +294,38 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
               if (emote.provider === '7TV' && SEVENTV_isZeroWidth(emote)) {
                 if (lastNormalEmoteData) {
                   lastNormalEmoteData.zws.push(emote);
-                  const combinedKey = `${keyPrefix}-frag-${fIndex}-combined-${lastNormalEmoteData.normal.code}-${i}`;
+                  const baseCode = lastNormalEmoteData.twemoji || lastNormalEmoteData.normal!.code;
+                  const combinedKey = `${keyPrefix}-frag-${fIndex}-combined-${baseCode}-${i}`;
                   textFragments[lastNormalEmoteData.textFragIndex] = renderCombinedEmoteTooltip(
-                    lastNormalEmoteData.normal,
+                    lastNormalEmoteData,
                     lastNormalEmoteData.zws,
                     combinedKey
                   );
                 } else {
-                  const zeroWidthKey = `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`;
-                  const zwSpan = (
-                    <MessageTooltip
-                      key={zeroWidthKey}
-                      title={
-                        <div className="flex w-fit flex-col items-center">
-                          <img
-                            className="mb-[0.3rem] w-auto border-none align-top"
-                            src={getEmoteImageUrl(emote, emote.provider, 2)}
-                            alt={word}
-                          />
-                          <p className="block text-xs">{`Emote: ${emote.name || emote.code}`}</p>
-                          <p className="block text-xs">{`${emote.provider} Emotes`}</p>
-                        </div>
-                      }
-                    >
-                      <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                        <img
-                          className="h-auto min-h-[28px] w-auto max-w-full border-none"
-                          style={{ ...getEmoteImageStyle(emote), verticalAlign: 'middle' }}
-                          src={getEmoteImageUrl(emote, emote.provider)}
-                          srcSet={getEmoteImageSrcSet(emote, emote.provider)}
-                          alt={word}
-                        />{' '}
-                      </span>
-                    </MessageTooltip>
+                  lastNormalEmoteData = {
+                    normal: emote,
+                    twemoji: undefined,
+                    zws: [],
+                    textFragIndex: textFragments.length,
+                    isZw: true,
+                  };
+                  textFragments.push(
+                    renderEmoteTooltip(emote, word, `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`),
+                    ' '
                   );
-                  textFragments.push(zwSpan, ' ');
                 }
               } else {
                 const normalKey = `${keyPrefix}-frag-${fIndex}-emote-${word}-${i}`;
                 const normalEmoteEl = renderEmoteTooltip(emote, word, normalKey);
-                lastNormalEmoteData = { normal: emote, zws: [], textFragIndex: textFragments.length };
+                lastNormalEmoteData = {
+                  normal: emote,
+                  twemoji: undefined,
+                  zws: [],
+                  textFragIndex: textFragments.length,
+                };
                 textFragments.push(normalEmoteEl, ' ');
               }
             } else {
-              lastNormalEmoteData = null;
               if (emojiTest(word)) {
                 const parts = extractEmojis(word);
                 parts.forEach((part, pIndex) => {
@@ -309,7 +333,9 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
                     textFragments.push(
                       <span key={`${keyPrefix}-frag-${fIndex}-text-${part.text}-${i}-${pIndex}`}>{part.text}</span>
                     );
+                    lastNormalEmoteData = null;
                   } else {
+                    const twemojiIndex = textFragments.length;
                     textFragments.push(
                       <MessageTooltip
                         key={`${keyPrefix}-frag-${fIndex}-twemoji-${part.emoji}-${i}-${pIndex}`}
@@ -325,6 +351,7 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
                         </span>
                       </MessageTooltip>
                     );
+                    lastNormalEmoteData = { twemoji: part.emoji, zws: [], textFragIndex: twemojiIndex };
                   }
                 });
                 textFragments.push(' ');
@@ -341,8 +368,10 @@ export function useEmoteRendering({ emotes, badgesRef, platform }: UseEmoteRende
                   </a>,
                   ' '
                 );
+                lastNormalEmoteData = null;
               } else {
                 textFragments.push(<span key={`${keyPrefix}-frag-${fIndex}-text-${word}-${i}`}>{word}</span>, ' ');
+                lastNormalEmoteData = null;
               }
             }
           }
