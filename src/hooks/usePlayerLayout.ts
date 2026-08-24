@@ -19,7 +19,10 @@ export function usePlayerLayout(): UsePlayerLayoutReturn {
   });
 
   useEffect(() => {
-    const mql = window.matchMedia('(orientation: portrait)');
+    // Combined media query: width-based breakpoint for desktop, orientation-based for touch devices
+    const mql = window.matchMedia(
+      '(pointer: fine) and (max-width: 1024px), (pointer: coarse) and (orientation: portrait)'
+    );
     const handler = (e: MediaQueryListEvent | { matches: boolean }) => setIsPortrait(e.matches);
     setIsPortrait(mql.matches);
     mql.addEventListener('change', handler);
