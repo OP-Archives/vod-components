@@ -153,7 +153,7 @@ export default function BaseVod(props: BaseVodProps) {
 
   return (
     <div
-      className={`vod-player-container relative flex w-full min-w-0 flex-col items-center ${isPortrait ? '' : 'h-full min-h-0'}`}
+      className={`vod-player-container relative flex w-full min-w-0 flex-col items-center ${isPortrait ? 'portrait' : 'h-full min-h-0'}`}
     >
       {/* Player container stretches to remaining available height natively. 
         If Theatre Mode is toggled, it forces h-full to push the title/profile below the fold. 
