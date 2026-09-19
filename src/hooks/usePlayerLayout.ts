@@ -19,9 +19,11 @@ export function usePlayerLayout(): UsePlayerLayoutReturn {
   });
 
   useEffect(() => {
-    // Combined media query: width-based breakpoint for desktop, orientation-based for touch devices
+    // Desktop: width-based breakpoints (stricter for portrait-oriented displays); touch devices: orientation-based
     const mql = window.matchMedia(
-      '(pointer: fine) and (max-width: 1024px), (pointer: coarse) and (orientation: portrait)'
+      `(pointer: fine) and (orientation: landscape) and (max-width: 1024px),
+       (pointer: fine) and (orientation: portrait) and (max-width: 1440px),
+       (pointer: coarse) and (orientation: portrait)`
     );
     const handler = (e: MediaQueryListEvent | { matches: boolean }) => setIsPortrait(e.matches);
     setIsPortrait(mql.matches);
