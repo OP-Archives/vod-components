@@ -7,6 +7,10 @@ const setNativeVideoSrc = (video: HTMLVideoElement, url: string) => {
   video.src = url;
 };
 
+const setVideoCurrentTime = (video: HTMLVideoElement, time: number) => {
+  video.currentTime = time;
+};
+
 interface HlsConfig {
   enableWorker: boolean;
   lowLatencyMode: boolean;
@@ -82,11 +86,13 @@ export function useHlsPlayer({ type, cdnBase, platformVodId, playerRef }: UseHls
             if (data.fatal) {
               switch (data.type) {
                 case ErrorTypes.NETWORK_ERROR:
+                  hlsInstance.current?.startLoad();
+                  break;
                 case ErrorTypes.MEDIA_ERROR:
-                  hlsInstance.current!.destroy();
+                  hlsInstance.current?.recoverMediaError();
                   break;
                 default:
-                  hlsInstance.current!.destroy();
+                  hlsInstance.current?.destroy();
                   setFileError('Failed to load video');
                   break;
               }
@@ -98,8 +104,27 @@ export function useHlsPlayer({ type, cdnBase, platformVodId, playerRef }: UseHls
 
     initHls();
 
+    const handleVisibilityChange = () => {
+      const videoEl = playerRef.current;
+      if (!videoEl || videoEl.paused) return;
+
+      if (document.visibilityState === 'visible') {
+        const currentTime = videoEl.currentTime;
+        setVideoCurrentTime(videoEl, currentTime);
+
+        if (hlsInstance.current) {
+          hlsInstance.current.recoverMediaError();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
     return () => {
       isMounted = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
       if (hlsInstance.current) {
         hlsInstance.current.destroy();
       }
